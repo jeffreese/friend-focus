@@ -8,6 +8,17 @@ import {
 export default [
   layout('routes/layout.tsx', [
     index('routes/home.tsx'),
+    route('friends', 'routes/friends.tsx'),
+    route('friends/new', 'routes/friends.new.tsx'),
+    route('friends/:id', 'routes/friends.$id.tsx'),
+    route('friends/:id/edit', 'routes/friends.$id.edit.tsx'),
+    route('friends/:id/delete', 'routes/friends.$id.delete.tsx'),
+    route('events', 'routes/events.tsx'),
+    route('events/new', 'routes/events.new.tsx'),
+    route('events/:id', 'routes/events.$id.tsx'),
+    route('relationships', 'routes/relationships.tsx'),
+    route('journal', 'routes/journal.tsx'),
+    route('settings', 'routes/settings.tsx'),
     route('login', 'routes/login.tsx'),
     route('register', 'routes/register.tsx'),
     route('logout', 'routes/logout.tsx'),
