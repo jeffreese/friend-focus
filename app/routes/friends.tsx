@@ -1,6 +1,7 @@
 import { Plus, Users } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
+import { Avatar } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { EmptyState } from '~/components/ui/empty-state'
 import { FilterPill } from '~/components/ui/filter-pills'
@@ -144,13 +145,6 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {friends.map(f => {
-            const initials = f.name
-              .split(' ')
-              .map(n => n[0])
-              .join('')
-              .slice(0, 2)
-              .toUpperCase()
-
             return (
               <Link
                 key={f.id}
@@ -158,9 +152,7 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
                 className="rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all group"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
-                    {initials}
-                  </div>
+                  <Avatar name={f.name} color={f.tierColor || undefined} />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold group-hover:text-primary transition-colors truncate">
                       {f.name}

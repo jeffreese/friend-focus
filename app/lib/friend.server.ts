@@ -168,9 +168,11 @@ export function getFriendDetail(id: string, userId: string) {
       createdAt: friendConnection.createdAt,
       otherFriendId: friend.id,
       otherFriendName: friend.name,
+      otherFriendTierColor: closenessTier.color,
     })
     .from(friendConnection)
     .innerJoin(friend, eq(friendConnection.friendBId, friend.id))
+    .leftJoin(closenessTier, eq(friend.closenessTierId, closenessTier.id))
     .where(eq(friendConnection.friendAId, id))
     .orderBy(desc(friendConnection.createdAt))
     .all()
@@ -187,9 +189,11 @@ export function getFriendDetail(id: string, userId: string) {
       createdAt: friendConnection.createdAt,
       otherFriendId: friend.id,
       otherFriendName: friend.name,
+      otherFriendTierColor: closenessTier.color,
     })
     .from(friendConnection)
     .innerJoin(friend, eq(friendConnection.friendAId, friend.id))
+    .leftJoin(closenessTier, eq(friend.closenessTierId, closenessTier.id))
     .where(eq(friendConnection.friendBId, id))
     .orderBy(desc(friendConnection.createdAt))
     .all()

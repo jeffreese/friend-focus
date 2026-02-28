@@ -1,15 +1,17 @@
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Check, List, Network, Plus, Trash2, X } from 'lucide-react'
+import { Check, List, Network, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Form, Link, useNavigation } from 'react-router'
 import { ConnectionGraph } from '~/components/connection-graph'
 import { Button } from '~/components/ui/button'
 import { EmptyState } from '~/components/ui/empty-state'
+import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { PageHeader } from '~/components/ui/page-header'
 import { SearchInput } from '~/components/ui/search-input'
 import { Select } from '~/components/ui/select'
+import { StrengthDots } from '~/components/ui/strength-dots'
 import {
   Table,
   TableBody,
@@ -395,7 +397,6 @@ function ConnectionRow({
   nameA: string
   nameB: string
 }) {
-  const [confirming, setConfirming] = useState(false)
   const strengthLabel =
     CONNECTION_STRENGTHS[(connection.strength ?? 3) - 1] || 'Unknown'
 
@@ -421,56 +422,25 @@ function ConnectionRow({
         {connection.type || '—'}
       </TableCell>
       <TableCell className="text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="flex gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <span
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full ${
-                  i < (connection.strength ?? 3) ? 'bg-primary' : 'bg-border'
-                }`}
-              />
-            ))}
-          </span>
-          <span className="text-xs">{strengthLabel}</span>
-        </span>
+        <StrengthDots value={connection.strength ?? 3} label={strengthLabel} />
       </TableCell>
       <TableCell className="text-muted-foreground">
         {connection.howTheyMet || '—'}
       </TableCell>
       <TableCell className="text-right">
-        {confirming ? (
-          <div className="flex items-center justify-end gap-1">
-            <Form method="post">
-              <input type="hidden" name="intent" value="delete-connection" />
-              <input type="hidden" name="connectionId" value={connection.id} />
-              <button
-                type="submit"
-                className="text-destructive hover:text-destructive/80 transition-colors p-1"
-                title="Confirm delete"
-              >
-                <Check size={14} />
-              </button>
-            </Form>
+        <InlineConfirmDelete>
+          <Form method="post" className="inline">
+            <input type="hidden" name="intent" value="delete-connection" />
+            <input type="hidden" name="connectionId" value={connection.id} />
             <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1"
-              title="Cancel"
+              type="submit"
+              className="text-destructive hover:text-destructive/80 transition-colors p-1"
+              aria-label="Confirm delete"
             >
-              <X size={14} />
+              <Check size={14} />
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            className="text-muted-foreground hover:text-destructive transition-colors p-1 opacity-0 group-hover:opacity-100"
-            title="Delete"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
+          </Form>
+        </InlineConfirmDelete>
       </TableCell>
     </TableRow>
   )

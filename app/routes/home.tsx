@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
+import { Avatar } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { APP_NAME } from '~/config'
 import { db } from '~/db/index.server'
@@ -406,22 +407,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             ) : (
               <div className="space-y-2">
                 {careModeFriends.map(f => {
-                  const initials = f.name
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase()
-
                   return (
                     <Link
                       key={f.id}
                       to={`/friends/${f.id}`}
                       className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-xs font-semibold text-pink-500 shrink-0">
-                        {initials}
-                      </div>
+                      <Avatar
+                        name={f.name}
+                        size="xs"
+                        className="bg-pink-100 text-pink-500"
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate">
@@ -544,14 +540,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                        {f.name
-                          .split(' ')
-                          .map(n => n[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
+                      <Avatar name={f.name} size="xs" />
                       <div>
                         <p className="text-sm font-medium">{f.name}</p>
                         {f.location && (
