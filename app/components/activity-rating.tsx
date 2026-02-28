@@ -14,6 +14,7 @@ interface ActivityRatingProps {
   activityName: string
   defaultRating?: number | null
   readOnly?: boolean
+  hideLabel?: boolean
 }
 
 export function ActivityRating({
@@ -21,6 +22,7 @@ export function ActivityRating({
   activityName,
   defaultRating,
   readOnly = false,
+  hideLabel = false,
 }: ActivityRatingProps) {
   const [rating, setRating] = useState<number | null>(defaultRating ?? null)
 
@@ -31,9 +33,11 @@ export function ActivityRating({
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <span className="text-sm font-medium w-28 shrink-0 truncate">
-        {activityName}
-      </span>
+      {!hideLabel && (
+        <span className="text-sm font-medium w-28 shrink-0 truncate">
+          {activityName}
+        </span>
+      )}
       <div className="flex items-center gap-1.5">
         {[1, 2, 3, 4, 5].map(value => {
           const isActive = rating === value

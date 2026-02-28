@@ -3,6 +3,9 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
   Clock,
   MapPin,
   Pencil,
@@ -185,10 +188,74 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-destructive/10 text-destructive',
 }
 
+type GuestSortKey = 'name' | 'tier' | 'rsvp' | 'attended'
+type SortDir = 'asc' | 'desc'
+
+const RSVP_ORDER: Record<string, number> = {
+  attending: 0,
+  invited: 1,
+  not_invited: 2,
+  declined: 3,
+}
+
+function SortIcon({
+  column,
+  sortKey,
+  sortDir,
+}: {
+  column: GuestSortKey
+  sortKey: GuestSortKey
+  sortDir: SortDir
+}) {
+  if (column !== sortKey)
+    return <ChevronsUpDown size={12} className="ml-1 opacity-40 shrink-0" />
+  return sortDir === 'asc' ? (
+    <ChevronUp size={12} className="ml-1 shrink-0" />
+  ) : (
+    <ChevronDown size={12} className="ml-1 shrink-0" />
+  )
+}
+
 export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const { event, friends, activities, recommendations } = loaderData
   const [editing, setEditing] = useState(false)
   const [addingGuest, setAddingGuest] = useState(false)
+  const [sortKey, setSortKey] = useState<GuestSortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function handleSort(key: GuestSortKey) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const sortedInvitations = [...event.invitations].sort((a, b) => {
+    let cmp = 0
+    switch (sortKey) {
+      case 'name':
+        cmp = a.friendName.localeCompare(b.friendName)
+        break
+      case 'tier': {
+        const aOrder = a.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        const bOrder = b.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        cmp = aOrder - bOrder
+        break
+      }
+      case 'rsvp':
+        cmp = (RSVP_ORDER[a.status] ?? 99) - (RSVP_ORDER[b.status] ?? 99)
+        break
+      case 'attended': {
+        const aVal = a.attended === true ? 0 : a.attended === null ? 1 : 2
+        const bVal = b.attended === true ? 0 : b.attended === null ? 1 : 2
+        cmp = aVal - bVal
+        break
+      }
+    }
+    return sortDir === 'asc' ? cmp : -cmp
+  })
 
   const invitedFriendIds = new Set(event.invitations.map(i => i.friendId))
   const availableFriends = friends.filter(f => !invitedFriendIds.has(f.id))
@@ -259,7 +326,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       {/* Recommendations — only while planning */}
       {event.status === 'planning' && recommendations.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card mb-6">
-          <div className="p-5 border-b flex items-center justify-between">
+          <div className="p-5 border-b border-border-light flex items-center justify-between">
             <h3 className="font-semibold flex items-center gap-2">
               <Sparkles size={18} className="text-primary" />
               Guest List Recommendations
@@ -273,32 +340,30 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               Recalculate
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-xs text-muted-foreground border-b">
-                  <th className="py-3 px-3 w-10" />
-                  <th className="text-left py-3 px-3">Name</th>
-                  <th className="text-center py-3 px-3">Score</th>
-                  <th className="text-center py-3 px-3">Interest</th>
-                  <th className="text-center py-3 px-3">Closeness</th>
-                  <th className="text-center py-3 px-3">Social</th>
-                  <th className="text-left py-3 px-3">Why</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recommendations.map(rec => (
-                  <RecommendationRow key={rec.friendId} rec={rec} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10" />
+                <TableHead>Name</TableHead>
+                <TableHead className="text-center">Score</TableHead>
+                <TableHead className="text-center">Interest</TableHead>
+                <TableHead className="text-center">Closeness</TableHead>
+                <TableHead className="text-center">Social</TableHead>
+                <TableHead>Why</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recommendations.map(rec => (
+                <RecommendationRow key={rec.friendId} rec={rec} />
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
       {/* Guest list */}
       <div className="rounded-xl border border-border-light bg-card">
-        <div className="p-5 border-b flex items-center justify-between">
+        <div className="p-5 border-b border-border-light flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2">
             <Users size={18} className="text-primary" />
             Guest List ({event.invitations.length}
@@ -311,7 +376,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
         </div>
 
         {addingGuest && (
-          <div className="p-4 border-b bg-muted/50">
+          <div className="p-4 border-b border-border-light bg-muted/50">
             <Form method="post" className="flex items-center gap-3">
               <input type="hidden" name="intent" value="add-guest" />
               <Select name="friendId" className="flex-1">
@@ -346,15 +411,34 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Tier</TableHead>
-                <TableHead>RSVP</TableHead>
-                <TableHead>Attended</TableHead>
+                {(
+                  [
+                    { key: 'name', label: 'Name' },
+                    { key: 'tier', label: 'Tier' },
+                    { key: 'rsvp', label: 'RSVP' },
+                    { key: 'attended', label: 'Attended' },
+                  ] as const
+                ).map(col => (
+                  <TableHead key={col.key}>
+                    <button
+                      type="button"
+                      className="flex items-center hover:text-foreground transition-colors"
+                      onClick={() => handleSort(col.key)}
+                    >
+                      {col.label}
+                      <SortIcon
+                        column={col.key}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                      />
+                    </button>
+                  </TableHead>
+                ))}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {event.invitations.map(inv => (
+              {sortedInvitations.map(inv => (
                 <GuestRow key={inv.id} invitation={inv} />
               ))}
             </TableBody>
@@ -411,16 +495,16 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
 function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
   return (
-    <tr
-      className={`border-b transition-colors ${
+    <TableRow
+      className={
         rec.isInvited
           ? 'bg-primary/5 hover:bg-primary/10'
           : !rec.available
             ? 'opacity-60'
-            : 'hover:bg-accent/50'
-      }`}
+            : ''
+      }
     >
-      <td className="py-2.5 px-3">
+      <TableCell>
         <Form method="post">
           <input type="hidden" name="intent" value="toggle-invitation" />
           <input type="hidden" name="friendId" value={rec.friendId} />
@@ -442,11 +526,11 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
             )}
           </button>
         </Form>
-      </td>
-      <td className="py-2.5 px-3">
+      </TableCell>
+      <TableCell className="font-medium">
         <Link
           to={`/friends/${rec.friendId}`}
-          className="text-sm font-medium hover:text-primary"
+          className="hover:text-primary transition-colors"
         >
           {rec.friendName}
         </Link>
@@ -462,27 +546,25 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
             {rec.tierLabel}
           </span>
         )}
-      </td>
-      <td className="py-2.5 px-3 text-center">
-        <span className="text-sm font-bold">{rec.score}</span>
-      </td>
-      <td className="py-2.5 px-3 text-center">
+      </TableCell>
+      <TableCell className="text-center font-bold">{rec.score}</TableCell>
+      <TableCell className="text-center">
         <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted">
           {rec.interest.rating}
         </span>
-      </td>
-      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-center text-xs text-muted-foreground">
         {rec.closeness.tier || '\u2014'}
-      </td>
-      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-center text-xs text-muted-foreground">
         {rec.socialFit.of > 0
           ? `${rec.socialFit.knows}/${rec.socialFit.of}`
           : '\u2014'}
-      </td>
-      <td className="py-2.5 px-3 text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
         {rec.explanation}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -610,6 +692,7 @@ function GuestRow({
     friendName: string
     tierLabel: string | null
     tierColor: string | null
+    tierSortOrder: number | null
     status: string
     attended: boolean | null
   }

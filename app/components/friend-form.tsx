@@ -8,6 +8,14 @@ import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
 import { Textarea } from '~/components/ui/textarea'
 
 interface FriendFormProps {
@@ -219,21 +227,36 @@ export function FriendForm({
             Rate how much this person enjoys each activity (1 = Loves it, 5 =
             Definitely not)
           </p>
-          <div className="divide-y">
-            {activities.map(act => {
-              const existingRating = activityRatings?.find(
-                r => r.activityId === act.id,
-              )
-              return (
-                <ActivityRating
-                  key={act.id}
-                  activityId={act.id}
-                  activityName={act.name}
-                  defaultRating={existingRating?.rating}
-                />
-              )
-            })}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Activity</TableHead>
+                <TableHead>Rating</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activities.map(act => {
+                const existingRating = activityRatings?.find(
+                  r => r.activityId === act.id,
+                )
+                return (
+                  <TableRow key={act.id}>
+                    <TableCell className="font-medium w-28">
+                      {act.name}
+                    </TableCell>
+                    <TableCell>
+                      <ActivityRating
+                        activityId={act.id}
+                        activityName={act.name}
+                        defaultRating={existingRating?.rating}
+                        hideLabel
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
