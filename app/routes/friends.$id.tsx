@@ -60,6 +60,7 @@ import {
   availabilitySchema,
   CONNECTION_STRENGTHS,
   CONNECTION_TYPE_COLORS,
+  CONNECTION_TYPES,
   friendConnectionSchema,
   giftIdeaSchema,
   noteSchema,
@@ -574,12 +575,12 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
         {addingConnection && (
           <Form
             method="post"
-            className="flex items-center gap-3 mb-4 pb-4 border-b border-border-light"
+            className="space-y-2 mb-4 pb-4 border-b border-border-light"
             onSubmit={() => setAddingConnection(false)}
           >
             <input type="hidden" name="intent" value="add-connection" />
             <input type="hidden" name="friendAId" value={friend.id} />
-            <Select name="friendBId" required className="flex-1">
+            <Select name="friendBId" required>
               <option value="">Select friend...</option>
               {otherFriends.map(f => (
                 <option key={f.id} value={f.id}>
@@ -587,24 +588,40 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                 </option>
               ))}
             </Select>
-            <Select name="strength" defaultValue="3" className="w-24">
-              {CONNECTION_STRENGTHS.map((s, i) => (
-                <option key={s} value={i + 1}>
-                  {i + 1} — {s}
-                </option>
-              ))}
-            </Select>
-            <Button size="sm" type="submit">
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              onClick={() => setAddingConnection(false)}
-            >
-              Cancel
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Select name="type">
+                <option value="">Type (optional)</option>
+                {CONNECTION_TYPES.map(t => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+              <Select name="strength" defaultValue="3">
+                {CONNECTION_STRENGTHS.map((s, i) => (
+                  <option key={s} value={i + 1}>
+                    {i + 1} — {s}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input name="howTheyMet" placeholder="How they met" />
+              <Input name="startDate" type="date" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" type="submit">
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                onClick={() => setAddingConnection(false)}
+              >
+                Cancel
+              </Button>
+            </div>
           </Form>
         )}
         {friend.connections.length > 0 ? (
@@ -644,11 +661,23 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                           <span className="text-xs opacity-75">{c.type}</span>
                         )}
                       </div>
-                      <StrengthDots
-                        value={c.strength ?? 3}
-                        label={strengthLabel}
-                        className="text-muted-foreground"
-                      />
+                      <div className="flex items-center gap-2">
+                        <StrengthDots
+                          value={c.strength ?? 3}
+                          label={strengthLabel}
+                          className="text-muted-foreground"
+                        />
+                        {c.howTheyMet && (
+                          <span className="text-[10px] text-muted-foreground">
+                            · {c.howTheyMet}
+                          </span>
+                        )}
+                        {c.startDate && (
+                          <span className="text-[10px] text-muted-foreground">
+                            · Since {formatDate(c.startDate)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <InlineConfirmDelete>
