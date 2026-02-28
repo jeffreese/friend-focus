@@ -55,7 +55,7 @@ async function importData() {
   console.log('Importing data from friend-tracker backup...')
 
   // 1. Get or create user
-  let existingUser = db
+  const existingUser = db
     .select()
     .from(schema.user)
     .where(eq(schema.user.email, TARGET_EMAIL))
@@ -68,7 +68,11 @@ async function importData() {
     console.log(`Using existing user: ${TARGET_EMAIL} (${userId})`)
   } else {
     const result = await auth.api.signUpEmail({
-      body: { name: TARGET_NAME, email: TARGET_EMAIL, password: TARGET_PASSWORD },
+      body: {
+        name: TARGET_NAME,
+        email: TARGET_EMAIL,
+        password: TARGET_PASSWORD,
+      },
     })
     if (!result) throw new Error('Failed to create user')
     userId = result.user.id
@@ -214,7 +218,9 @@ async function importData() {
     'friend-activities.json',
   )
 
-  console.log(`Importing ${oldFriendActivities.length} friend activity ratings...`)
+  console.log(
+    `Importing ${oldFriendActivities.length} friend activity ratings...`,
+  )
   let faSkipped = 0
   for (const fa of oldFriendActivities) {
     const newFriendId = friendIdMap.get(fa.friendId)
@@ -349,8 +355,7 @@ async function importData() {
         status: inv.status,
         mustInvite: !!inv.mustInvite,
         mustExclude: !!inv.mustExclude,
-        attended:
-          inv.attended === null ? null : !!inv.attended,
+        attended: inv.attended === null ? null : !!inv.attended,
         createdAt: new Date(toTimestamp(inv.createdAt)),
         updatedAt: new Date(toTimestamp(inv.updatedAt)),
       })
