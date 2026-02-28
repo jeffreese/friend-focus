@@ -79,6 +79,7 @@ export function getEventDetail(id: string, userId: string) {
       friendName: friend.name,
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
+      tierSortOrder: closenessTier.sortOrder,
       status: eventInvitation.status,
       attended: eventInvitation.attended,
       mustInvite: eventInvitation.mustInvite,

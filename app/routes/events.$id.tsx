@@ -3,6 +3,9 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
   Clock,
   MapPin,
   Pencil,
@@ -185,10 +188,74 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-destructive/10 text-destructive',
 }
 
+type GuestSortKey = 'name' | 'tier' | 'rsvp' | 'attended'
+type SortDir = 'asc' | 'desc'
+
+const RSVP_ORDER: Record<string, number> = {
+  attending: 0,
+  invited: 1,
+  not_invited: 2,
+  declined: 3,
+}
+
+function SortIcon({
+  column,
+  sortKey,
+  sortDir,
+}: {
+  column: GuestSortKey
+  sortKey: GuestSortKey
+  sortDir: SortDir
+}) {
+  if (column !== sortKey)
+    return <ChevronsUpDown size={12} className="ml-1 opacity-40 shrink-0" />
+  return sortDir === 'asc' ? (
+    <ChevronUp size={12} className="ml-1 shrink-0" />
+  ) : (
+    <ChevronDown size={12} className="ml-1 shrink-0" />
+  )
+}
+
 export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const { event, friends, activities, recommendations } = loaderData
   const [editing, setEditing] = useState(false)
   const [addingGuest, setAddingGuest] = useState(false)
+  const [sortKey, setSortKey] = useState<GuestSortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function handleSort(key: GuestSortKey) {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const sortedInvitations = [...event.invitations].sort((a, b) => {
+    let cmp = 0
+    switch (sortKey) {
+      case 'name':
+        cmp = a.friendName.localeCompare(b.friendName)
+        break
+      case 'tier': {
+        const aOrder = a.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        const bOrder = b.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        cmp = aOrder - bOrder
+        break
+      }
+      case 'rsvp':
+        cmp = (RSVP_ORDER[a.status] ?? 99) - (RSVP_ORDER[b.status] ?? 99)
+        break
+      case 'attended': {
+        const aVal = a.attended === true ? 0 : a.attended === null ? 1 : 2
+        const bVal = b.attended === true ? 0 : b.attended === null ? 1 : 2
+        cmp = aVal - bVal
+        break
+      }
+    }
+    return sortDir === 'asc' ? cmp : -cmp
+  })
 
   const invitedFriendIds = new Set(event.invitations.map(i => i.friendId))
   const availableFriends = friends.filter(f => !invitedFriendIds.has(f.id))
@@ -344,15 +411,34 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Tier</TableHead>
-                <TableHead>RSVP</TableHead>
-                <TableHead>Attended</TableHead>
+                {(
+                  [
+                    { key: 'name', label: 'Name' },
+                    { key: 'tier', label: 'Tier' },
+                    { key: 'rsvp', label: 'RSVP' },
+                    { key: 'attended', label: 'Attended' },
+                  ] as const
+                ).map(col => (
+                  <TableHead key={col.key}>
+                    <button
+                      type="button"
+                      className="flex items-center hover:text-foreground transition-colors"
+                      onClick={() => handleSort(col.key)}
+                    >
+                      {col.label}
+                      <SortIcon
+                        column={col.key}
+                        sortKey={sortKey}
+                        sortDir={sortDir}
+                      />
+                    </button>
+                  </TableHead>
+                ))}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {event.invitations.map(inv => (
+              {sortedInvitations.map(inv => (
                 <GuestRow key={inv.id} invitation={inv} />
               ))}
             </TableBody>
@@ -606,6 +692,7 @@ function GuestRow({
     friendName: string
     tierLabel: string | null
     tierColor: string | null
+    tierSortOrder: number | null
     status: string
     attended: boolean | null
   }
