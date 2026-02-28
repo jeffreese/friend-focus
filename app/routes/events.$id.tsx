@@ -273,26 +273,24 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               Recalculate
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-xs text-muted-foreground border-b">
-                  <th className="py-3 px-3 w-10" />
-                  <th className="text-left py-3 px-3">Name</th>
-                  <th className="text-center py-3 px-3">Score</th>
-                  <th className="text-center py-3 px-3">Interest</th>
-                  <th className="text-center py-3 px-3">Closeness</th>
-                  <th className="text-center py-3 px-3">Social</th>
-                  <th className="text-left py-3 px-3">Why</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recommendations.map(rec => (
-                  <RecommendationRow key={rec.friendId} rec={rec} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10" />
+                <TableHead>Name</TableHead>
+                <TableHead className="text-center">Score</TableHead>
+                <TableHead className="text-center">Interest</TableHead>
+                <TableHead className="text-center">Closeness</TableHead>
+                <TableHead className="text-center">Social</TableHead>
+                <TableHead>Why</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recommendations.map(rec => (
+                <RecommendationRow key={rec.friendId} rec={rec} />
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -411,16 +409,16 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
 function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
   return (
-    <tr
-      className={`border-b transition-colors ${
+    <TableRow
+      className={
         rec.isInvited
           ? 'bg-primary/5 hover:bg-primary/10'
           : !rec.available
             ? 'opacity-60'
-            : 'hover:bg-accent/50'
-      }`}
+            : ''
+      }
     >
-      <td className="py-2.5 px-3">
+      <TableCell>
         <Form method="post">
           <input type="hidden" name="intent" value="toggle-invitation" />
           <input type="hidden" name="friendId" value={rec.friendId} />
@@ -442,11 +440,11 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
             )}
           </button>
         </Form>
-      </td>
-      <td className="py-2.5 px-3">
+      </TableCell>
+      <TableCell className="font-medium">
         <Link
           to={`/friends/${rec.friendId}`}
-          className="text-sm font-medium hover:text-primary"
+          className="hover:text-primary transition-colors"
         >
           {rec.friendName}
         </Link>
@@ -462,27 +460,25 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
             {rec.tierLabel}
           </span>
         )}
-      </td>
-      <td className="py-2.5 px-3 text-center">
-        <span className="text-sm font-bold">{rec.score}</span>
-      </td>
-      <td className="py-2.5 px-3 text-center">
+      </TableCell>
+      <TableCell className="text-center font-bold">{rec.score}</TableCell>
+      <TableCell className="text-center">
         <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted">
           {rec.interest.rating}
         </span>
-      </td>
-      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-center text-xs text-muted-foreground">
         {rec.closeness.tier || '\u2014'}
-      </td>
-      <td className="py-2.5 px-3 text-center text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-center text-xs text-muted-foreground">
         {rec.socialFit.of > 0
           ? `${rec.socialFit.knows}/${rec.socialFit.of}`
           : '\u2014'}
-      </td>
-      <td className="py-2.5 px-3 text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
         {rec.explanation}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }
 
