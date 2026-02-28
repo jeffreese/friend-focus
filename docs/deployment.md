@@ -21,14 +21,14 @@ SQLite. The production URL is **https://friend-focus.fly.dev/**.
 
 ### Deploying
 
-```bash
-fly deploy
-```
+**Automatic:** Merging to `main` triggers a GitHub Actions deploy. CI checks
+(lint, typecheck, test, build) must pass first. See `.github/workflows/ci.yml`.
 
-This builds the Docker image, pushes it, and updates the running machine. The
-app runs database migrations automatically on startup (see
-`app/db/index.server.ts`), so no manual migration step is needed after schema
-changes.
+**Manual:** Run `fly deploy` from the project root.
+
+Both methods build the Docker image on Fly's remote builders and update the
+running machine. Database migrations run automatically on startup (see
+`app/db/index.server.ts`), so no manual migration step is needed.
 
 ### Useful Commands
 
