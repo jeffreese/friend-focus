@@ -146,6 +146,10 @@ Files ending in `.server.ts` are excluded from client bundles. Use for database
 access, auth config, and session helpers.
 
 ### Database
+- **IMPORTANT: The local `sqlite.db` contains real user data. NEVER run
+  `pnpm db:seed` or any command that clears/resets the database without
+  explicit user approval.** A backup import script exists at
+  `app/db/import-data.ts` if data needs to be restored.
 - Schema defined in `app/db/schema.ts` using Drizzle's `sqliteTable`
 - Auth tables are managed by better-auth; add your own below them
 - GlobalThis singleton prevents multiple connections during HMR
