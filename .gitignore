@@ -16,4 +16,5 @@
 .vite/
 
 # Drizzle
-/drizzle/meta/
+# Note: /drizzle/meta/ must be tracked — it contains _journal.json
+# which is required for programmatic migrations at startup
