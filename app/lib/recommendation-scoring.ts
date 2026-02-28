@@ -5,6 +5,7 @@ export interface FriendRecommendation {
   friendName: string
   tierLabel: string | null
   tierColor: string | null
+  tierSortOrder: number | null
   score: number
   interest: { rating: string; score: number }
   closeness: { tier: string | null; score: number }

@@ -189,6 +189,7 @@ const statusColors: Record<string, string> = {
 }
 
 type GuestSortKey = 'name' | 'tier' | 'rsvp' | 'attended'
+type RecSortKey = 'name' | 'score' | 'interest' | 'tier' | 'social'
 type SortDir = 'asc' | 'desc'
 
 const RSVP_ORDER: Record<string, number> = {
@@ -203,8 +204,8 @@ function SortIcon({
   sortKey,
   sortDir,
 }: {
-  column: GuestSortKey
-  sortKey: GuestSortKey
+  column: string
+  sortKey: string
   sortDir: SortDir
 }) {
   if (column !== sortKey)
@@ -222,6 +223,8 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
   const [addingGuest, setAddingGuest] = useState(false)
   const [sortKey, setSortKey] = useState<GuestSortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [recSortKey, setRecSortKey] = useState<RecSortKey>('score')
+  const [recSortDir, setRecSortDir] = useState<SortDir>('desc')
 
   function handleSort(key: GuestSortKey) {
     if (sortKey === key) {
@@ -231,6 +234,40 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       setSortDir('asc')
     }
   }
+
+  function handleRecSort(key: RecSortKey) {
+    if (recSortKey === key) {
+      setRecSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setRecSortKey(key)
+      setRecSortDir('asc')
+    }
+  }
+
+  const sortedRecommendations = [...recommendations].sort((a, b) => {
+    let cmp = 0
+    switch (recSortKey) {
+      case 'name':
+        cmp = a.friendName.localeCompare(b.friendName)
+        break
+      case 'score':
+        cmp = a.score - b.score
+        break
+      case 'interest':
+        cmp = a.interest.score - b.interest.score
+        break
+      case 'tier': {
+        const aOrder = a.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        const bOrder = b.tierSortOrder ?? Number.MAX_SAFE_INTEGER
+        cmp = aOrder - bOrder
+        break
+      }
+      case 'social':
+        cmp = a.socialFit.score - b.socialFit.score
+        break
+    }
+    return recSortDir === 'asc' ? cmp : -cmp
+  })
 
   const sortedInvitations = [...event.invitations].sort((a, b) => {
     let cmp = 0
@@ -344,16 +381,38 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10" />
-                <TableHead>Name</TableHead>
-                <TableHead className="text-center">Score</TableHead>
-                <TableHead className="text-center">Interest</TableHead>
-                <TableHead className="text-center">Closeness</TableHead>
-                <TableHead className="text-center">Social</TableHead>
+                {(
+                  [
+                    { key: 'name', label: 'Name', center: false },
+                    { key: 'score', label: 'Score', center: true },
+                    { key: 'interest', label: 'Interest', center: true },
+                    { key: 'tier', label: 'Tier', center: true },
+                    { key: 'social', label: 'Social', center: true },
+                  ] as const
+                ).map(col => (
+                  <TableHead
+                    key={col.key}
+                    className={col.center ? 'text-center' : ''}
+                  >
+                    <button
+                      type="button"
+                      className={`flex items-center hover:text-foreground transition-colors ${col.center ? 'mx-auto' : ''}`}
+                      onClick={() => handleRecSort(col.key)}
+                    >
+                      {col.label}
+                      <SortIcon
+                        column={col.key}
+                        sortKey={recSortKey}
+                        sortDir={recSortDir}
+                      />
+                    </button>
+                  </TableHead>
+                ))}
                 <TableHead>Why</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recommendations.map(rec => (
+              {sortedRecommendations.map(rec => (
                 <RecommendationRow key={rec.friendId} rec={rec} />
               ))}
             </TableBody>
@@ -534,9 +593,17 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
         >
           {rec.friendName}
         </Link>
-        {rec.tierLabel && (
+      </TableCell>
+      <TableCell className="text-center font-bold">{rec.score}</TableCell>
+      <TableCell className="text-center">
+        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted">
+          {rec.interest.rating}
+        </span>
+      </TableCell>
+      <TableCell className="text-center">
+        {rec.tierLabel ? (
           <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-2"
+            className="text-xs px-2 py-0.5 rounded-full font-medium"
             style={{
               color: rec.tierColor || undefined,
               borderColor: rec.tierColor || undefined,
@@ -545,16 +612,9 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
           >
             {rec.tierLabel}
           </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">No tier</span>
         )}
-      </TableCell>
-      <TableCell className="text-center font-bold">{rec.score}</TableCell>
-      <TableCell className="text-center">
-        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-muted">
-          {rec.interest.rating}
-        </span>
-      </TableCell>
-      <TableCell className="text-center text-xs text-muted-foreground">
-        {rec.closeness.tier || '\u2014'}
       </TableCell>
       <TableCell className="text-center text-xs text-muted-foreground">
         {rec.socialFit.of > 0

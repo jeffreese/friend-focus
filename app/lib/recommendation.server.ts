@@ -233,6 +233,7 @@ export function getRecommendations(
       friendName: f.name,
       tierLabel: f.tierLabel ?? null,
       tierColor: f.tierColor ?? null,
+      tierSortOrder: f.tierSortOrder ?? null,
       score: compositeScore,
       interest: { rating: interestLabel, score: interestScore },
       closeness: { tier: f.tierLabel ?? null, score: closenessScore },
