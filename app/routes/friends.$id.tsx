@@ -380,7 +380,11 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
           title="Activity Interests"
         >
           {friend.activityRatings && friend.activityRatings.length > 0 ? (
-            <ActivityInterestsSummary ratings={friend.activityRatings} />
+            <ActivityInterestsSummary
+              ratings={friend.activityRatings}
+              friendId={friend.id}
+              friendName={friend.name}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               No activity ratings yet.{' '}

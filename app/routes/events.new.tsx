@@ -10,7 +10,7 @@ import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
-import { createEvent } from '~/lib/event.server'
+import { addInvitation, createEvent } from '~/lib/event.server'
 import { EVENT_VIBE_LABELS, EVENT_VIBES, eventSchema } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
 import type { Route } from './+types/events.new'
@@ -22,7 +22,22 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await requireSession(request)
   const activities = getActivities(session.user.id)
-  return { activities }
+
+  const url = new URL(request.url)
+  const activityId = url.searchParams.get('activityId') || undefined
+  const friendId = url.searchParams.get('friendId') || undefined
+  const friendName = url.searchParams.get('friendName') || undefined
+
+  // Build a suggested event name when coming from a friend profile
+  let defaultName = ''
+  if (activityId && friendName) {
+    const activity = activities.find(a => a.id === activityId)
+    if (activity) {
+      defaultName = `${activity.name} with ${friendName}`
+    }
+  }
+
+  return { activities, activityId, friendId, friendName, defaultName }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -35,14 +50,26 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const evt = createEvent(submission.value, session.user.id)
+
+  // Auto-invite friend when creating from a friend profile
+  const friendId = formData.get('friendId')
+  if (typeof friendId === 'string' && friendId) {
+    addInvitation(evt.id, friendId)
+  }
+
   return redirect(`/events/${evt.id}`)
 }
 
 export default function EventNew({ loaderData }: Route.ComponentProps) {
-  const { activities } = loaderData
+  const { activities, activityId, friendId, friendName, defaultName } =
+    loaderData
   const lastResult = useActionData<typeof action>()
   const [form, fields] = useForm({
     lastResult,
+    defaultValue: {
+      name: defaultName,
+      activityId: activityId || '',
+    },
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: eventSchema })
     },
@@ -50,9 +77,12 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
     shouldRevalidate: 'onInput',
   })
 
+  const backTo = friendId ? `/friends/${friendId}` : '/events'
+  const backLabel = friendName ? `Back to ${friendName}` : 'Back to Events'
+
   return (
     <div className="max-w-2xl mx-auto">
-      <BackLink to="/events">Back to Events</BackLink>
+      <BackLink to={backTo}>{backLabel}</BackLink>
 
       <h2 className="text-2xl font-bold mb-6">New Event</h2>
 
@@ -63,6 +93,8 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         noValidate
         className="space-y-5 rounded-xl border border-border-light bg-card p-6"
       >
+        {friendId && <input type="hidden" name="friendId" value={friendId} />}
+
         {/* Name */}
         <FormField>
           <Label htmlFor={fields.name.id}>
@@ -71,6 +103,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
           <Input
             id={fields.name.id}
             name={fields.name.name}
+            defaultValue={defaultName}
             placeholder="e.g., Poker Night"
             error={!!fields.name.errors}
           />
@@ -80,7 +113,11 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         {/* Activity */}
         <FormField>
           <Label htmlFor={fields.activityId.id}>Activity</Label>
-          <Select id={fields.activityId.id} name={fields.activityId.name}>
+          <Select
+            id={fields.activityId.id}
+            name={fields.activityId.name}
+            defaultValue={activityId || ''}
+          >
             <option value="">None</option>
             {activities.map(a => (
               <option key={a.id} value={a.id}>
@@ -144,7 +181,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         <div className="flex items-center gap-3 pt-2">
           <Button type="submit">Create Event</Button>
           <Button variant="outline" asChild>
-            <Link to="/events">Cancel</Link>
+            <Link to={backTo}>Cancel</Link>
           </Button>
         </div>
       </Form>
