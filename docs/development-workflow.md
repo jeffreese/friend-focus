@@ -2,6 +2,47 @@
 
 This documents our development process — how we go from an idea to merged code.
 
+## Implementation Plans
+
+For non-trivial features (multi-step work, new pages, data model changes),
+create an implementation plan before writing code. This is especially important
+for work that spans multiple sessions with AI assistance.
+
+### When to create a plan
+
+- Adding a new feature with multiple routes, components, and server logic
+- Porting functionality from another project
+- Refactoring across many files
+- Any work expected to take more than one coding session
+
+### Plan structure
+
+1. **Explore** the existing codebase and any reference code
+2. **Design** the implementation approach — data model, routes, components
+3. **Create a tracker** in Claude's project memory
+   (`implementation-tracker.md`) with checkboxes for each phase and task
+4. **Work in phases** — complete one phase at a time, commit after each
+5. **Update the tracker** as work progresses so the next session can pick up
+   where you left off
+
+### Multi-session workflow
+
+When work spans multiple sessions:
+
+1. Check the implementation tracker for current status
+2. Read the session log to understand what was done and what's next
+3. Pick up from the next incomplete phase
+4. Commit completed work before ending the session
+5. Update the tracker with a session log entry
+
+The tracker lives in Claude's project memory so it persists across
+conversations. It should include:
+
+- Phase-by-phase checklist with completion status
+- Key decisions made during implementation
+- Session log with dates and what was accomplished
+- Pointer to the working branch
+
 ## Branch Workflow
 
 All changes go through pull requests. Never push directly to `main`.
