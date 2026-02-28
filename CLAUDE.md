@@ -35,6 +35,8 @@ pnpm db:seed      # Seed database (creates test@example.com / password123)
 - Documentation must be updated when behavior, structure, or commands change
 - Use `db:generate` + `db:migrate` (not `db:push`) for committed schema changes
 - Commit messages: imperative mood, explain why, <70 char summary line
+- For non-trivial features, create an implementation plan with a tracker in
+  Claude's project memory before starting (see Development Workflow docs)
 
 See [Development Workflow](./docs/development-workflow.md) for full details.
 
