@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // ─── Auth tables (better-auth) ───────────────────────────────────────────────
 
@@ -56,15 +56,239 @@ export const verification = sqliteTable('verification', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
 })
 
-// ─── Application tables ─────────────────────────────────────────────────────
-// TODO: Replace this example table with your own. This demonstrates the
-// Drizzle schema pattern with foreign keys, timestamps, and defaults.
+// ─── Closeness Tiers ─────────────────────────────────────────────────────────
+
+export const closenessTier = sqliteTable(
+  'closeness_tier',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    label: text('label').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+    color: text('color'),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [
+    uniqueIndex('closeness_tier_user_sort').on(table.userId, table.sortOrder),
+  ],
+)
+
+// ─── Friends ─────────────────────────────────────────────────────────────────
+
+export const friend = sqliteTable('friend', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  photo: text('photo'),
+  phone: text('phone'),
+  email: text('email'),
+  socialHandles: text('social_handles'),
+  birthday: text('birthday'),
+  location: text('location'),
+  loveLanguage: text('love_language'),
+  favoriteFood: text('favorite_food'),
+  dietaryRestrictions: text('dietary_restrictions'),
+  employer: text('employer'),
+  occupation: text('occupation'),
+  personalNotes: text('personal_notes'),
+  careModeActive: integer('care_mode_active', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  careModeNote: text('care_mode_note'),
+  careModeReminder: text('care_mode_reminder'),
+  careModeStartedAt: text('care_mode_started_at'),
+  closenessTierId: text('closeness_tier_id').references(
+    () => closenessTier.id,
+    { onDelete: 'set null' },
+  ),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
+
+// ─── Activities & Interests ──────────────────────────────────────────────────
+
+export const activity = sqliteTable(
+  'activity',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: text('name').notNull(),
+    icon: text('icon'),
+    isDefault: integer('is_default', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    sortOrder: integer('sort_order').notNull().default(0),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [uniqueIndex('activity_user_name').on(table.userId, table.name)],
+)
+
+export const friendActivity = sqliteTable(
+  'friend_activity',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    friendId: text('friend_id')
+      .notNull()
+      .references(() => friend.id, { onDelete: 'cascade' }),
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => activity.id, { onDelete: 'cascade' }),
+    rating: integer('rating').notNull(),
+  },
+  table => [
+    uniqueIndex('friend_activity_unique').on(table.friendId, table.activityId),
+  ],
+)
+
+// ─── Availability ────────────────────────────────────────────────────────────
+
+export const availability = sqliteTable('availability', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  friendId: text('friend_id')
+    .notNull()
+    .references(() => friend.id, { onDelete: 'cascade' }),
+  label: text('label').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
+
+// ─── Friend Connections (Social Graph) ───────────────────────────────────────
+
+export const friendConnection = sqliteTable(
+  'friend_connection',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    friendAId: text('friend_a_id')
+      .notNull()
+      .references(() => friend.id, { onDelete: 'cascade' }),
+    friendBId: text('friend_b_id')
+      .notNull()
+      .references(() => friend.id, { onDelete: 'cascade' }),
+    type: text('type'),
+    strength: integer('strength').notNull().default(3),
+    howTheyMet: text('how_they_met'),
+    startDate: text('start_date'),
+    endDate: text('end_date'),
+    notes: text('notes'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [
+    uniqueIndex('friend_connection_unique').on(
+      table.friendAId,
+      table.friendBId,
+    ),
+  ],
+)
+
+// ─── Gift Ideas ──────────────────────────────────────────────────────────────
+
+export const giftIdea = sqliteTable('gift_idea', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  friendId: text('friend_id')
+    .notNull()
+    .references(() => friend.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  url: text('url'),
+  price: text('price'),
+  purchased: integer('purchased', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  purchasedAt: text('purchased_at'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
+export const event = sqliteTable('event', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  activityId: text('activity_id').references(() => activity.id, {
+    onDelete: 'set null',
+  }),
+  date: text('date'),
+  time: text('time'),
+  location: text('location'),
+  capacity: integer('capacity'),
+  vibe: text('vibe'),
+  status: text('status').notNull().default('planning'),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
+
+export const eventInvitation = sqliteTable(
+  'event_invitation',
+  {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    eventId: text('event_id')
+      .notNull()
+      .references(() => event.id, { onDelete: 'cascade' }),
+    friendId: text('friend_id')
+      .notNull()
+      .references(() => friend.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('not_invited'),
+    attended: integer('attended', { mode: 'boolean' }),
+    mustInvite: integer('must_invite', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    mustExclude: integer('must_exclude', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [
+    uniqueIndex('event_invitation_unique').on(table.eventId, table.friendId),
+  ],
+)
+
+// ─── Notes / Journal ─────────────────────────────────────────────────────────
 
 export const note = sqliteTable('note', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  title: text('title').notNull(),
-  body: text('body'),
-  authorId: text('author_id')
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  content: text('content').notNull(),
+  type: text('type').notNull(),
+  friendId: text('friend_id').references(() => friend.id, {
+    onDelete: 'cascade',
+  }),
+  eventId: text('event_id').references(() => event.id, {
+    onDelete: 'cascade',
+  }),
+  userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
