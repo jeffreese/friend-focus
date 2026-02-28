@@ -1,7 +1,12 @@
-import { Plus, Search } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
 import { Button } from '~/components/ui/button'
+import { EmptyState } from '~/components/ui/empty-state'
+import { FilterPill } from '~/components/ui/filter-pills'
+import { PageHeader } from '~/components/ui/page-header'
+import { SearchInput } from '~/components/ui/search-input'
+import { Select } from '~/components/ui/select'
 import { APP_NAME } from '~/config'
 import { getClosenessTiers } from '~/lib/closeness.server'
 import { getFriends } from '~/lib/friend.server'
@@ -54,70 +59,52 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Friends</h2>
+      <PageHeader title="Friends">
         <Button asChild>
           <Link to="/friends/new">
             <Plus size={16} className="mr-2" />
             Add Friend
           </Link>
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Search and sort */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            type="text"
-            defaultValue={currentSearch}
-            placeholder="Search friends..."
-            className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
-            onChange={e => updateParams({ search: e.target.value })}
-          />
-        </div>
-        <select
+        <SearchInput
+          className="flex-1"
+          defaultValue={currentSearch}
+          placeholder="Search friends..."
+          onChange={e => updateParams({ search: e.target.value })}
+        />
+        <Select
           value={currentSort}
           onChange={e => updateParams({ sort: e.target.value })}
-          className="px-3 py-2.5 text-sm rounded-lg border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
         >
           <option value="closeness">Sort: Closeness</option>
           <option value="name">Sort: Name</option>
           <option value="createdAt">Sort: Recently Added</option>
-        </select>
+        </Select>
       </div>
 
       {/* Tier filter pills */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <span className="text-xs text-muted-foreground mr-1">Tiers:</span>
-        <button
-          type="button"
+        <FilterPill
+          active={!currentTier}
           onClick={() => updateParams({ tier: '' })}
-          className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
-            !currentTier
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-accent'
-          }`}
         >
           All ({totalFriends})
-        </button>
+        </FilterPill>
         {tiers.map(tier => (
-          <button
-            type="button"
+          <FilterPill
             key={tier.id}
+            active={currentTier === tier.id}
             onClick={() =>
               updateParams({
                 tier: currentTier === tier.id ? '' : tier.id,
               })
             }
-            className={`px-3 py-1 text-xs rounded-full font-medium transition-colors ${
-              currentTier === tier.id
-                ? 'text-white'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
+            className={currentTier === tier.id ? 'text-white' : ''}
             style={
               currentTier === tier.id && tier.color
                 ? { backgroundColor: tier.color }
@@ -125,27 +112,35 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
             }
           >
             {tier.label} ({tier.friendCount})
-          </button>
+          </FilterPill>
         ))}
       </div>
 
       {/* Friend cards */}
       {friends.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground mb-4">
-            {currentSearch || currentTier
-              ? 'No friends match your filters.'
-              : 'No friends yet. Add your first friend!'}
-          </p>
-          {!currentSearch && !currentTier && (
-            <Button asChild>
-              <Link to="/friends/new">
-                <Plus size={16} className="mr-2" />
-                Add Friend
-              </Link>
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          icon={Users}
+          title={
+            currentSearch || currentTier
+              ? 'No friends match your filters'
+              : 'No friends yet'
+          }
+          description={
+            currentSearch || currentTier
+              ? undefined
+              : 'Add your first friend to get started!'
+          }
+          action={
+            !currentSearch && !currentTier ? (
+              <Button asChild>
+                <Link to="/friends/new">
+                  <Plus size={16} className="mr-2" />
+                  Add Friend
+                </Link>
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {friends.map(f => {

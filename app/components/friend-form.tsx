@@ -5,6 +5,7 @@ import { ActivityRating } from '~/components/activity-rating'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { Select } from '~/components/ui/select'
 
 interface FriendFormProps {
   friend?: {
@@ -66,11 +67,10 @@ export function FriendForm({
       {/* Closeness Tier */}
       <div>
         <Label htmlFor="closenessTierId">Closeness</Label>
-        <select
+        <Select
           id="closenessTierId"
           name="closenessTierId"
           defaultValue={friend?.closenessTierId || ''}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           <option value="">Select a tier...</option>
           {tiers.map(tier => (
@@ -78,7 +78,7 @@ export function FriendForm({
               {tier.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Contact info */}
@@ -150,11 +150,10 @@ export function FriendForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="loveLanguage">Love Language</Label>
-          <select
+          <Select
             id="loveLanguage"
             name="loveLanguage"
             defaultValue={friend?.loveLanguage || ''}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <option value="">Select...</option>
             <option value="Words of Affirmation">Words of Affirmation</option>
@@ -162,7 +161,7 @@ export function FriendForm({
             <option value="Receiving Gifts">Receiving Gifts</option>
             <option value="Acts of Service">Acts of Service</option>
             <option value="Physical Touch">Physical Touch</option>
-          </select>
+          </Select>
         </div>
         <div>
           <Label htmlFor="favoriteFood">Favorite Food</Label>
@@ -301,17 +300,16 @@ function CareModeSection({
           </div>
           <div>
             <Label htmlFor="careModeReminder">Reminder Cadence</Label>
-            <select
+            <Select
               id="careModeReminder"
               name="careModeReminder"
               defaultValue={defaultReminder}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">No reminder</option>
               <option value="daily">Daily</option>
               <option value="every_3_days">Every 3 Days</option>
               <option value="weekly">Weekly</option>
-            </select>
+            </Select>
           </div>
         </div>
       )}

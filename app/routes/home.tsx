@@ -1,5 +1,14 @@
 import { and, count, desc, eq, gte, or } from 'drizzle-orm'
-import { Cake, Calendar, Heart, Notebook, Plus, Users } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  Cake,
+  CalendarDays,
+  Heart,
+  MapPin,
+  Plus,
+  Users,
+} from 'lucide-react'
 import { Link } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
 import { Button } from '~/components/ui/button'
@@ -200,29 +209,55 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Link
           to="/friends"
-          className="rounded-xl border bg-card p-4 hover:border-primary/30 transition-colors"
+          className="rounded-xl border border-border-light bg-card p-4 hover:border-primary/30 transition-colors"
         >
-          <Users size={20} className="text-primary mb-2" />
-          <p className="text-2xl font-bold">{friendCount}</p>
-          <p className="text-xs text-muted-foreground">Friends</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Users size={20} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{friendCount}</p>
+              <p className="text-xs text-muted-foreground">Friends</p>
+            </div>
+          </div>
         </Link>
         <Link
           to="/events"
-          className="rounded-xl border bg-card p-4 hover:border-primary/30 transition-colors"
+          className="rounded-xl border border-border-light bg-card p-4 hover:border-accent-teal/30 transition-colors"
         >
-          <Calendar size={20} className="text-primary mb-2" />
-          <p className="text-2xl font-bold">{upcomingEventCount}</p>
-          <p className="text-xs text-muted-foreground">Upcoming Events</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-accent-teal-light/30 text-accent-teal">
+              <CalendarDays size={20} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{upcomingEventCount}</p>
+              <p className="text-xs text-muted-foreground">Upcoming Events</p>
+            </div>
+          </div>
         </Link>
-        <div className="rounded-xl border bg-card p-4">
-          <Heart size={20} className="text-pink-500 mb-2" />
-          <p className="text-2xl font-bold">{careModeCount}</p>
-          <p className="text-xs text-muted-foreground">In Care Mode</p>
+        <div className="rounded-xl border border-border-light bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-pink-100 text-pink-500">
+              <Heart size={20} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{careModeCount}</p>
+              <p className="text-xs text-muted-foreground">In Care Mode</p>
+            </div>
+          </div>
         </div>
-        <div className="rounded-xl border bg-card p-4">
-          <Cake size={20} className="text-amber-500 mb-2" />
-          <p className="text-2xl font-bold">{birthdayCount}</p>
-          <p className="text-xs text-muted-foreground">Upcoming Birthdays</p>
+        <div className="rounded-xl border border-border-light bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-100 text-amber-500">
+              <Cake size={20} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{birthdayCount}</p>
+              <p className="text-xs text-muted-foreground">
+                Upcoming Birthdays
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -230,43 +265,67 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {/* Left column */}
         <div className="space-y-6">
           {/* Upcoming Events */}
-          <section className="rounded-xl border bg-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Upcoming Events</h3>
+          <section className="rounded-xl border border-border-light bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CalendarDays size={18} className="text-accent-teal" />
+                Upcoming Events
+              </h3>
               <Link
                 to="/events"
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                View all
+                View all <ArrowRight size={12} />
               </Link>
             </div>
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No upcoming events.
-              </p>
+              <div className="text-center py-6">
+                <CalendarDays
+                  size={24}
+                  className="mx-auto text-foreground-light mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  No upcoming events.
+                </p>
+                <Link
+                  to="/events/new"
+                  className="text-xs text-primary hover:underline mt-1 inline-block"
+                >
+                  Plan one
+                </Link>
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {upcomingEvents.map(evt => (
                   <Link
                     key={evt.id}
                     to={`/events/${evt.id}`}
-                    className="flex items-center justify-between py-2 hover:bg-accent/50 -mx-2 px-2 rounded-md transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
                   >
-                    <div>
-                      <span className="text-sm font-medium">{evt.name}</span>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">
+                          {evt.name}
+                        </p>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColors[evt.status] || ''}`}
+                        >
+                          {evt.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
                         {evt.date && <span>{formatDate(evt.date)}</span>}
-                        {evt.location && <span>{evt.location}</span>}
+                        {evt.location && (
+                          <span className="flex items-center gap-0.5">
+                            <MapPin size={10} /> {evt.location}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize ${statusColors[evt.status] || ''}`}
-                      >
-                        {evt.status}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {evt.invitationCount} invited
+                    <div className="text-right shrink-0 ml-3">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Users size={12} />
+                        {evt.invitationCount}
                       </span>
                     </div>
                   </Link>
@@ -276,33 +335,46 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </section>
 
           {/* Recent Activity */}
-          <section className="rounded-xl border bg-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Recent Activity</h3>
+          <section className="rounded-xl border border-border-light bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <BookOpen size={18} className="text-muted-foreground" />
+                Recent Activity
+              </h3>
               <Link
                 to="/journal"
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                View all
+                View all <ArrowRight size={12} />
               </Link>
             </div>
             {recentNotes.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No recent activity.
-              </p>
+              <div className="text-center py-6">
+                <BookOpen
+                  size={24}
+                  className="mx-auto text-foreground-light mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  No journal entries yet.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {recentNotes.map(n => (
-                  <div key={n.id} className="flex items-start gap-2 py-1.5">
-                    <Notebook
-                      size={14}
-                      className="text-muted-foreground mt-0.5 shrink-0"
-                    />
+                  <div
+                    key={n.id}
+                    className="flex items-start gap-3 p-3 rounded-lg bg-muted"
+                  >
+                    <div className="shrink-0 mt-0.5">
+                      <BookOpen size={14} className="text-muted-foreground" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{n.content}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {n.createdAt ? formatRelativeDate(n.createdAt) : ''}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm truncate">{n.content}</p>
+                        <span className="text-[10px] text-foreground-light shrink-0">
+                          {n.createdAt ? formatRelativeDate(n.createdAt) : ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -314,73 +386,115 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {/* Right column */}
         <div className="space-y-6">
           {/* Care Mode */}
-          {careModeFriends.length > 0 && (
-            <section className="rounded-xl border border-pink-200 bg-pink-50 p-5">
-              <h3 className="font-semibold text-pink-700 mb-3 flex items-center gap-2">
-                <Heart size={16} className="fill-current" />
+          <section className="rounded-xl border border-border-light bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Heart size={18} className="text-pink-500" />
                 Care Mode
               </h3>
-              <div className="space-y-2">
-                {careModeFriends.map(f => (
-                  <Link
-                    key={f.id}
-                    to={`/friends/${f.id}`}
-                    className="flex items-center justify-between py-1.5 hover:bg-pink-100/50 -mx-2 px-2 rounded-md transition-colors"
-                  >
-                    <div>
-                      <span className="text-sm font-medium text-pink-800">
-                        {f.name}
-                      </span>
-                      {f.careModeNote && (
-                        <p className="text-xs text-pink-600 truncate max-w-[200px]">
-                          {f.careModeNote}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {f.careModeReminder && (
-                        <span className="text-[10px] text-pink-500">
-                          {REMINDER_LABELS[f.careModeReminder] ||
-                            f.careModeReminder}
-                        </span>
-                      )}
-                      <CareModeBadge />
-                    </div>
-                  </Link>
-                ))}
+            </div>
+            {careModeFriends.length === 0 ? (
+              <div className="text-center py-6">
+                <Heart
+                  size={24}
+                  className="mx-auto text-foreground-light mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  No friends in care mode.
+                </p>
               </div>
-            </section>
-          )}
+            ) : (
+              <div className="space-y-2">
+                {careModeFriends.map(f => {
+                  const initials = f.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()
+
+                  return (
+                    <Link
+                      key={f.id}
+                      to={`/friends/${f.id}`}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-xs font-semibold text-pink-500 shrink-0">
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {f.name}
+                          </p>
+                          <CareModeBadge />
+                        </div>
+                        {f.careModeNote && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {f.careModeNote}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-foreground-light">
+                          {f.careModeReminder && (
+                            <span>
+                              {REMINDER_LABELS[f.careModeReminder] ||
+                                f.careModeReminder}
+                            </span>
+                          )}
+                          {f.careModeStartedAt && (
+                            <span>Since {formatDate(f.careModeStartedAt)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </section>
 
           {/* Upcoming Birthdays */}
-          <section className="rounded-xl border bg-card p-5">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Cake size={16} className="text-amber-500" />
-              Upcoming Birthdays
-            </h3>
+          <section className="rounded-xl border border-border-light bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Cake size={18} className="text-amber-500" />
+                Upcoming Birthdays
+              </h3>
+            </div>
             {upcomingBirthdays.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No birthdays in the next 30 days.
-              </p>
+              <div className="text-center py-6">
+                <Cake
+                  size={24}
+                  className="mx-auto text-foreground-light mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  No upcoming birthdays in the next 30 days.
+                </p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {upcomingBirthdays.map(b => (
                   <Link
                     key={b.id}
                     to={`/friends/${b.id}`}
-                    className="flex items-center justify-between py-1.5 hover:bg-accent/50 -mx-2 px-2 rounded-md transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
                   >
-                    <div>
-                      <span className="text-sm font-medium">{b.name}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {formatBirthday(b.birthday)}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 shrink-0">
+                        <Cake size={14} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{b.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatBirthday(b.birthday)}
+                        </p>
+                      </div>
                     </div>
                     <span
                       className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         b.daysUntil === 0
                           ? 'bg-amber-100 text-amber-700'
-                          : 'bg-muted text-muted-foreground'
+                          : 'bg-accent text-muted-foreground'
                       }`}
                     >
                       {b.daysUntil === 0 ? 'Today!' : `in ${b.daysUntil}d`}
@@ -392,43 +506,60 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </section>
 
           {/* Recently Added Friends */}
-          <section className="rounded-xl border bg-card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Recently Added</h3>
+          <section className="rounded-xl border border-border-light bg-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Users size={18} className="text-primary" />
+                Recently Added
+              </h3>
               <Link
                 to="/friends"
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                View all
+                View all <ArrowRight size={12} />
               </Link>
             </div>
             {recentFriends.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No friends yet.
-              </p>
+              <div className="text-center py-6">
+                <Users
+                  size={24}
+                  className="mx-auto text-foreground-light mb-2"
+                />
+                <p className="text-sm text-muted-foreground">
+                  No friends yet. Add your first friend!
+                </p>
+                <Link
+                  to="/friends/new"
+                  className="text-xs text-primary hover:underline mt-1 inline-block"
+                >
+                  Add Friend
+                </Link>
+              </div>
             ) : (
               <div className="space-y-2">
                 {recentFriends.map(f => (
                   <Link
                     key={f.id}
                     to={`/friends/${f.id}`}
-                    className="flex items-center gap-3 py-1.5 hover:bg-accent/50 -mx-2 px-2 rounded-md transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                      {f.name
-                        .split(' ')
-                        .map(n => n[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{f.name}</span>
-                      {f.location && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          {f.location}
-                        </span>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                        {f.name
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{f.name}</p>
+                        {f.location && (
+                          <p className="text-xs text-muted-foreground">
+                            {f.location}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     {f.tierLabel && (
                       <span

@@ -201,7 +201,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <div className="rounded-xl border bg-card p-6 mb-6">
+        <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3">
@@ -254,7 +254,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
       {/* Recommendations — only while planning */}
       {event.status === 'planning' && recommendations.length > 0 && (
-        <div className="rounded-xl border bg-card mb-6">
+        <div className="rounded-xl border border-border-light bg-card mb-6">
           <div className="p-5 border-b flex items-center justify-between">
             <h3 className="font-semibold flex items-center gap-2">
               <Sparkles size={18} className="text-primary" />
@@ -293,7 +293,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       )}
 
       {/* Guest list */}
-      <div className="rounded-xl border bg-card">
+      <div className="rounded-xl border border-border-light bg-card">
         <div className="p-5 border-b flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2">
             <Users size={18} className="text-primary" />
@@ -312,7 +312,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               <input type="hidden" name="intent" value="add-guest" />
               <select
                 name="friendId"
-                className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                className="flex-1 h-9 rounded-md border border-input bg-card px-3 text-sm"
               >
                 <option value="">Select a friend...</option>
                 {availableFriends.map(f => (
@@ -364,7 +364,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Notes */}
-      <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
         <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
           Notes
         </h3>
@@ -393,7 +393,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
               name="content"
               placeholder="Add a note..."
               required
-              className="flex-1 px-2 py-1 text-sm rounded border border-input bg-transparent"
+              className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
             />
             <button
               type="submit"
@@ -511,7 +511,7 @@ function EventEditForm({
   return (
     <Form
       method="post"
-      className="rounded-xl border bg-card p-6 mb-6 space-y-4"
+      className="rounded-xl border border-border-light bg-card p-6 mb-6 space-y-4"
     >
       <input type="hidden" name="intent" value="update-event" />
       <div className="grid grid-cols-2 gap-4">
@@ -527,7 +527,7 @@ function EventEditForm({
             id="edit-activityId"
             name="activityId"
             defaultValue={event.activityId || ''}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
           >
             <option value="">None</option>
             {activities.map(a => (
@@ -543,7 +543,7 @@ function EventEditForm({
             id="edit-status"
             name="status"
             defaultValue={event.status}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
           >
             {EVENT_STATUSES.map(s => (
               <option key={s} value={s}>
@@ -595,7 +595,7 @@ function EventEditForm({
             id="edit-vibe"
             name="vibe"
             defaultValue={event.vibe || ''}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
           >
             <option value="">None</option>
             {EVENT_VIBES.map(v => (
@@ -665,7 +665,7 @@ function GuestRow({
             name="status"
             defaultValue={invitation.status}
             onChange={e => e.target.form?.requestSubmit()}
-            className="text-xs px-2 py-1 rounded-lg border border-input bg-transparent font-medium"
+            className="text-xs px-2 py-1 rounded-lg border border-input bg-card font-medium"
           >
             {INVITATION_STATUSES.map(s => (
               <option key={s} value={s}>
@@ -685,7 +685,7 @@ function GuestRow({
               invitation.attended === null ? '' : String(invitation.attended)
             }
             onChange={e => e.target.form?.requestSubmit()}
-            className="text-xs px-2 py-1 rounded-lg border border-input bg-transparent font-medium"
+            className="text-xs px-2 py-1 rounded-lg border border-input bg-card font-medium"
           >
             <option value="">{'\u2014'}</option>
             <option value="true">Yes</option>

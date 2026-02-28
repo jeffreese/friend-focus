@@ -1,7 +1,7 @@
 import { parseWithZod } from '@conform-to/zod/v4'
-import { ArrowLeft } from 'lucide-react'
-import { Link, redirect, useActionData } from 'react-router'
+import { redirect, useActionData } from 'react-router'
 import { FriendForm } from '~/components/friend-form'
+import { BackLink } from '~/components/ui/back-link'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
 import { getClosenessTiers } from '~/lib/closeness.server'
@@ -69,17 +69,11 @@ export default function FriendNew({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Link
-        to="/friends"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Friends
-      </Link>
+      <BackLink to="/friends">Back to Friends</BackLink>
 
       <h2 className="text-2xl font-bold mb-6">Add Friend</h2>
 
-      <div className="rounded-xl border bg-card p-6">
+      <div className="rounded-xl border border-border-light bg-card p-6">
         <FriendForm
           tiers={tiers}
           activities={activities}
