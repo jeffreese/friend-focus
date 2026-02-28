@@ -1,5 +1,7 @@
 import {
   Calendar,
+  ChevronsLeft,
+  ChevronsRight,
   GitFork,
   Home,
   LogIn,
@@ -26,19 +28,23 @@ export async function loader({ request }: Route.LoaderArgs) {
 function SidebarLink({
   to,
   icon: Icon,
+  collapsed,
   children,
 }: {
   to: string
   icon: React.ComponentType<{ className?: string }>
+  collapsed: boolean
   children: React.ReactNode
 }) {
   return (
     <NavLink
       to={to}
       end
+      title={collapsed ? String(children) : undefined}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+          'flex items-center rounded-lg text-sm transition-colors',
+          collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
           isActive
             ? 'nav-link-active'
             : 'text-sidebar-text-muted hover:bg-sidebar-hover hover:text-sidebar-text',
@@ -46,7 +52,7 @@ function SidebarLink({
       }
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span>{children}</span>
+      {!collapsed && <span>{children}</span>}
     </NavLink>
   )
 }
@@ -61,94 +67,110 @@ export default function Layout() {
       <aside
         className={cn(
           'flex flex-col bg-sidebar transition-all duration-200',
-          collapsed ? 'w-0 overflow-hidden' : 'w-64',
+          collapsed ? 'w-16' : 'w-64',
         )}
       >
-        <div className="flex h-14 items-center gap-2 border-b border-white/10 px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-            {APP_INITIALS}
-          </div>
-          <span className="text-sm font-semibold text-white">{APP_NAME}</span>
+        <div
+          className={cn(
+            'flex items-center border-b border-white/10',
+            collapsed ? 'h-14 justify-center px-2' : 'h-14 px-4',
+          )}
+        >
+          {collapsed ? (
+            <span className="text-sm font-bold text-sidebar-text">
+              {APP_INITIALS}
+            </span>
+          ) : (
+            <div>
+              <h1 className="text-sm font-bold text-sidebar-text">
+                {APP_NAME}
+              </h1>
+              <p className="text-[10px] text-sidebar-text-muted">
+                Plan. Connect. Remember.
+              </p>
+            </div>
+          )}
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          <SidebarLink to="/" icon={Home}>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+          <SidebarLink to="/" icon={Home} collapsed={collapsed}>
             Dashboard
           </SidebarLink>
-          <SidebarLink to="/friends" icon={Users}>
+          <SidebarLink to="/friends" icon={Users} collapsed={collapsed}>
             Friends
           </SidebarLink>
-          <SidebarLink to="/events" icon={Calendar}>
+          <SidebarLink to="/events" icon={Calendar} collapsed={collapsed}>
             Events
           </SidebarLink>
-          <SidebarLink to="/relationships" icon={GitFork}>
+          <SidebarLink to="/relationships" icon={GitFork} collapsed={collapsed}>
             Relationships
           </SidebarLink>
-          <SidebarLink to="/journal" icon={Notebook}>
+          <SidebarLink to="/journal" icon={Notebook} collapsed={collapsed}>
             Journal
           </SidebarLink>
-          <SidebarLink to="/settings" icon={Settings}>
+          <SidebarLink to="/settings" icon={Settings} collapsed={collapsed}>
             Settings
           </SidebarLink>
         </nav>
 
-        <div className="border-t border-white/10 p-3 space-y-1">
+        <div className="border-t border-white/10 p-2 space-y-1">
           {user ? (
             <>
-              <div className="px-3 py-2 text-xs text-sidebar-text-muted truncate">
-                {user.email}
-              </div>
+              {!collapsed && (
+                <div className="px-3 py-2 text-xs text-sidebar-text-muted truncate">
+                  {user.email}
+                </div>
+              )}
               <form action="/logout" method="post">
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-text-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
+                  title={collapsed ? 'Logout' : undefined}
+                  className={cn(
+                    'flex w-full items-center rounded-lg text-sm text-sidebar-text-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-text',
+                    collapsed
+                      ? 'justify-center px-2 py-2.5'
+                      : 'gap-3 px-3 py-2.5',
+                  )}
                 >
                   <LogOut className="h-4 w-4 shrink-0" />
-                  <span>Logout</span>
+                  {!collapsed && <span>Logout</span>}
                 </button>
               </form>
             </>
           ) : (
             <>
-              <SidebarLink to="/login" icon={LogIn}>
+              <SidebarLink to="/login" icon={LogIn} collapsed={collapsed}>
                 Login
               </SidebarLink>
-              <SidebarLink to="/register" icon={UserPlus}>
+              <SidebarLink to="/register" icon={UserPlus} collapsed={collapsed}>
                 Register
               </SidebarLink>
             </>
           )}
-        </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center border-b border-border px-4">
           <button
             type="button"
             onClick={toggleSidebar}
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn(
+              'flex w-full items-center rounded-lg text-sm text-sidebar-text-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-text',
+              collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
+            )}
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            {collapsed ? (
+              <ChevronsRight className="h-4 w-4 shrink-0" />
+            ) : (
+              <>
+                <ChevronsLeft className="h-4 w-4 shrink-0" />
+                <span>Collapse</span>
+              </>
+            )}
           </button>
-        </header>
+        </div>
+      </aside>
 
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
-        </main>
-      </div>
+      <main className="flex-1 overflow-y-auto p-8">
+        <Outlet />
+      </main>
     </div>
   )
 }

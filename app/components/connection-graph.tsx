@@ -74,12 +74,12 @@ export function ConnectionGraph({
 
       ctx.beginPath()
       ctx.arc(node.x, node.y, size, 0, 2 * Math.PI)
-      ctx.fillStyle = isDimmed ? `${node.color}66` : node.color || '#6b7280'
+      ctx.fillStyle = isDimmed ? `${node.color}40` : node.color || '#6b7280'
       ctx.fill()
 
       if (isSelected) {
         ctx.strokeStyle = '#ffffff'
-        ctx.lineWidth = 2
+        ctx.lineWidth = 2 / globalScale
         ctx.stroke()
       }
 
@@ -87,9 +87,7 @@ export function ConnectionGraph({
       ctx.font = `${fontSize}px sans-serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillStyle = isDimmed
-        ? 'rgba(255,255,255,0.3)'
-        : 'rgba(255,255,255,0.9)'
+      ctx.fillStyle = isDimmed ? '#9ca3af80' : '#9ca3af'
       ctx.fillText(node.name || '', node.x, node.y + size + 2)
     },
     [selectedNodeId, connectedNodeIds],
@@ -98,13 +96,13 @@ export function ConnectionGraph({
   const linkColor = useCallback(
     // biome-ignore lint/suspicious/noExplicitAny: graph library types
     (link: any) => {
-      if (!selectedNodeId) return 'rgba(255,255,255,0.3)'
+      if (!selectedNodeId) return 'rgba(156, 163, 175, 0.3)'
       const src = typeof link.source === 'object' ? link.source.id : link.source
       const tgt = typeof link.target === 'object' ? link.target.id : link.target
       if (src === selectedNodeId || tgt === selectedNodeId) {
-        return 'rgba(255,255,255,0.6)'
+        return 'rgba(156, 163, 175, 0.6)'
       }
-      return 'rgba(255,255,255,0.08)'
+      return 'rgba(156, 163, 175, 0.08)'
     },
     [selectedNodeId],
   )
@@ -124,10 +122,7 @@ export function ConnectionGraph({
   const graphData = { nodes: [...nodes], links: [...links] }
 
   return (
-    <div
-      ref={containerRef}
-      className="rounded-lg border bg-zinc-900 overflow-hidden"
-    >
+    <div ref={containerRef} className="w-full" style={{ height: 380 }}>
       <ForceGraph
         graphData={graphData}
         width={dimensions.width}

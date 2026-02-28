@@ -2,6 +2,9 @@ import { BookOpen, Calendar, Edit3, Plus, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, useSearchParams } from 'react-router'
 import { Button } from '~/components/ui/button'
+import { EmptyState } from '~/components/ui/empty-state'
+import { FilterPill } from '~/components/ui/filter-pills'
+import { PageHeader } from '~/components/ui/page-header'
 import { APP_NAME } from '~/config'
 import { formatRelativeDate } from '~/lib/format'
 import { createNote, deleteNote, getNotes, updateNote } from '~/lib/note.server'
@@ -76,20 +79,19 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Journal</h2>
+      <PageHeader title="Journal">
         <Button size="sm" onClick={() => setShowNewForm(!showNewForm)}>
           <Plus size={14} className="mr-1" />
           New Entry
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Filters */}
       <div className="flex items-center gap-3 mb-6">
         {TYPE_FILTERS.map(f => (
-          <button
+          <FilterPill
             key={f.value}
-            type="button"
+            active={currentType === f.value}
             onClick={() => {
               const params = new URLSearchParams(searchParams)
               if (f.value) {
@@ -99,14 +101,9 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
               }
               setSearchParams(params, { replace: true })
             }}
-            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors ${
-              currentType === f.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
           >
             {f.label}
-          </button>
+          </FilterPill>
         ))}
       </div>
 
@@ -114,7 +111,7 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
       {showNewForm && (
         <Form
           method="post"
-          className="rounded-xl border bg-card p-4 mb-6"
+          className="rounded-xl border border-border-light bg-card p-4 mb-6"
           onSubmit={() => setShowNewForm(false)}
         >
           <input type="hidden" name="intent" value="add-note" />
@@ -123,7 +120,7 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
             rows={3}
             required
             placeholder="Write a journal entry..."
-            className="w-full px-3 py-2 text-sm rounded-md border border-input bg-transparent resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+            className="w-full px-3 py-2 text-sm rounded-md border border-input bg-card resize-none focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <div className="flex gap-2 mt-2">
             <Button type="submit" size="sm">
@@ -143,15 +140,15 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
 
       {/* Notes timeline */}
       {notes.length === 0 ? (
-        <div className="text-center py-16">
-          <BookOpen size={48} className="mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No entries yet</h3>
-          <p className="text-sm text-muted-foreground">
-            {currentType
+        <EmptyState
+          icon={BookOpen}
+          title="No entries yet"
+          description={
+            currentType
               ? 'No entries match your filter.'
-              : 'Start journaling to track your thoughts and interactions.'}
-          </p>
-        </div>
+              : 'Start journaling to track your thoughts and interactions.'
+          }
+        />
       ) : (
         <div className="space-y-3">
           {notes.map(n => {
@@ -162,7 +159,7 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
             return (
               <div
                 key={n.id}
-                className="flex gap-3 rounded-xl border bg-card p-4 group"
+                className="flex gap-3 rounded-xl border border-border-light bg-card p-4 group"
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${color}`}
@@ -198,7 +195,7 @@ export default function Journal({ loaderData }: Route.ComponentProps) {
                         defaultValue={n.content}
                         rows={2}
                         required
-                        className="w-full mt-1 px-2 py-1.5 text-sm rounded-md border border-input bg-transparent resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="w-full mt-1 px-2 py-1.5 text-sm rounded-md border border-input bg-card resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                       />
                       <div className="flex gap-1 mt-1">
                         <Button type="submit" size="sm" variant="ghost">

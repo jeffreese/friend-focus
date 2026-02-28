@@ -8,6 +8,10 @@ import {
 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import { Button } from '~/components/ui/button'
+import { EmptyState } from '~/components/ui/empty-state'
+import { FilterPill } from '~/components/ui/filter-pills'
+import { PageHeader } from '~/components/ui/page-header'
+import { StatusBadge } from '~/components/ui/status-badge'
 import { APP_NAME } from '~/config'
 import { getEvents } from '~/lib/event.server'
 import { formatDate } from '~/lib/format'
@@ -27,29 +31,21 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { events }
 }
 
-const statusColors: Record<string, string> = {
-  planning: 'bg-warning/10 text-warning',
-  finalized: 'bg-primary/10 text-primary',
-  completed: 'bg-success/10 text-success',
-  cancelled: 'bg-destructive/10 text-destructive',
-}
-
 export default function Events({ loaderData }: Route.ComponentProps) {
   const { events } = loaderData
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const currentStatus = searchParams.get('status') || ''
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Events</h2>
+      <PageHeader title="Events">
         <Button asChild>
           <Link to="/events/new">
             <Plus size={16} className="mr-2" />
             New Event
           </Link>
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Status filters */}
       <div className="flex items-center gap-3 mb-6">
@@ -58,42 +54,43 @@ export default function Events({ loaderData }: Route.ComponentProps) {
           { label: 'Planning', value: 'planning' },
           { label: 'Completed', value: 'completed' },
         ].map(f => (
-          <Link
+          <FilterPill
             key={f.value}
-            to={f.value ? `/events?status=${f.value}` : '/events'}
-            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors ${
-              currentStatus === f.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
+            active={currentStatus === f.value}
+            onClick={() => {
+              const params = new URLSearchParams(searchParams)
+              if (f.value) params.set('status', f.value)
+              else params.delete('status')
+              setSearchParams(params, { replace: true })
+            }}
           >
             {f.label}
-          </Link>
+          </FilterPill>
         ))}
       </div>
 
       {/* Event cards */}
       {events.length === 0 ? (
-        <div className="text-center py-16">
-          <Calendar size={48} className="mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No events yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Create your first event to start planning gatherings with friends.
-          </p>
-          <Button asChild>
-            <Link to="/events/new">
-              <Plus size={16} className="mr-2" />
-              New Event
-            </Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title="No events yet"
+          description="Create your first event to start planning gatherings with friends."
+          action={
+            <Button asChild>
+              <Link to="/events/new">
+                <Plus size={16} className="mr-2" />
+                New Event
+              </Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {events.map(evt => (
             <Link
               key={evt.id}
               to={`/events/${evt.id}`}
-              className="block rounded-xl border bg-card p-5 hover:border-primary/30 hover:shadow-sm transition-all group"
+              className="block rounded-xl border border-border-light bg-card p-5 hover:border-primary/30 hover:shadow-sm transition-all group"
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -101,11 +98,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
                     <h3 className="font-semibold group-hover:text-primary transition-colors">
                       {evt.name}
                     </h3>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${statusColors[evt.status] || ''}`}
-                    >
-                      {evt.status}
-                    </span>
+                    <StatusBadge status={evt.status} />
                     {evt.vibe && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                         {EVENT_VIBE_LABELS[evt.vibe] || evt.vibe}

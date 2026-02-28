@@ -1,6 +1,5 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import {
-  ArrowLeft,
   Briefcase,
   Cake,
   Edit,
@@ -13,6 +12,7 @@ import {
 import { Form, Link, useActionData, useRouteError } from 'react-router'
 import { ActivityInterestsSummary } from '~/components/activity-interests-summary'
 import { CareModeBadge, CareModeBanner } from '~/components/care-mode-indicator'
+import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { ErrorDisplay } from '~/components/ui/error-display'
 import { APP_NAME } from '~/config'
@@ -177,16 +177,10 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
         )}
 
       {/* Back link */}
-      <Link
-        to="/friends"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Friends
-      </Link>
+      <BackLink to="/friends">Back to Friends</BackLink>
 
       {/* Profile header */}
-      <div className="rounded-xl border bg-card p-6 mb-6">
+      <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
@@ -327,7 +321,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
 
       {/* Detail sections */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-xl border border-border-light bg-card p-5">
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
             Activity Interests
           </h3>
@@ -345,13 +339,13 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
             </p>
           )}
         </div>
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-xl border border-border-light bg-card p-5">
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
             Gift Ideas
           </h3>
           <GiftSection giftIdeas={friend.gifts} />
         </div>
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-xl border border-border-light bg-card p-5">
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
             Availability
           </h3>
@@ -360,7 +354,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Connections */}
-      <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
         <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
           Connections
         </h3>
@@ -372,7 +366,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Event History */}
-      <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
         <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
           Event History
         </h3>
@@ -380,7 +374,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Notes */}
-      <div className="mt-6 rounded-xl border bg-card p-5">
+      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
         <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
           Notes
         </h3>
@@ -456,12 +450,12 @@ function GiftSection({
           name="description"
           placeholder="Gift idea..."
           required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <input
           name="price"
           placeholder="Price"
-          className="w-20 px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="w-20 px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <button
           type="submit"
@@ -513,19 +507,19 @@ function AvailabilitySection({
           name="label"
           placeholder="Label"
           required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <input
           name="startDate"
           type="date"
           required
-          className="px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <input
           name="endDate"
           type="date"
           required
-          className="px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <button
           type="submit"
@@ -602,7 +596,7 @@ function ConnectionSection({
           <select
             name="friendBId"
             required
-            className="flex-1 px-2 py-1 text-sm rounded border border-input bg-transparent"
+            className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
           >
             <option value="">Select friend...</option>
             {otherFriends.map(f => (
@@ -613,7 +607,7 @@ function ConnectionSection({
           </select>
           <select
             name="strength"
-            className="w-20 px-2 py-1 text-sm rounded border border-input bg-transparent"
+            className="w-20 px-2 py-1 text-sm rounded border border-input bg-card"
           >
             <option value="3">3</option>
             <option value="1">1</option>
@@ -709,7 +703,7 @@ function NoteSection({
           name="content"
           placeholder="Add a note..."
           required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-transparent"
+          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
         />
         <button
           type="submit"

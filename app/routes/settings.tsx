@@ -2,6 +2,9 @@ import { ChevronDown, ChevronUp, Edit3, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, useNavigation } from 'react-router'
 import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Tab, TabList } from '~/components/ui/tabs'
 import { APP_NAME } from '~/config'
 import {
   createActivity,
@@ -160,30 +163,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       <h2 className="text-2xl font-bold mb-6">Settings</h2>
 
       {/* Tabs */}
-      <div className="flex items-center gap-3 mb-6 border-b">
-        <button
-          type="button"
-          onClick={() => setTab('tiers')}
-          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === 'tiers'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
+      <TabList className="mb-6">
+        <Tab active={tab === 'tiers'} onClick={() => setTab('tiers')}>
           Closeness Tiers
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('activities')}
-          className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-            tab === 'activities'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
+        </Tab>
+        <Tab active={tab === 'activities'} onClick={() => setTab('activities')}>
           Activities
-        </button>
-      </div>
+        </Tab>
+      </TabList>
 
       {/* Closeness Tiers tab */}
       {tab === 'tiers' && (
@@ -201,17 +188,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           {showAddTier && (
             <Form
               method="post"
-              className="flex items-end gap-2 mb-4 p-3 rounded-lg border bg-card"
+              className="flex items-end gap-2 mb-4 p-3 rounded-lg border border-border-light bg-card"
               onSubmit={() => setShowAddTier(false)}
             >
               <input type="hidden" name="intent" value="create-tier" />
               <div>
-                <label
-                  htmlFor="tier-color"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Color
-                </label>
+                <Label htmlFor="tier-color">Color</Label>
                 <input
                   type="color"
                   name="color"
@@ -221,18 +203,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 />
               </div>
               <div className="flex-1">
-                <label
-                  htmlFor="tier-label"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Label
-                </label>
-                <input
+                <Label htmlFor="tier-label">Label</Label>
+                <Input
                   type="text"
                   name="label"
                   id="tier-label"
                   required
-                  className="w-full mt-1 px-2 py-1.5 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="mt-1 bg-card"
                 />
               </div>
               <Button type="submit" size="sm" disabled={isSubmitting}>
@@ -255,7 +232,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               return (
                 <div
                   key={tier.id}
-                  className="flex items-center gap-2 rounded-lg border bg-card p-3"
+                  className="flex items-center gap-2 rounded-lg border border-border-light bg-card p-3"
                 >
                   {/* Reorder buttons */}
                   <div className="flex flex-col">
@@ -291,12 +268,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                         defaultValue={tier.color || '#6b7280'}
                         className="w-8 h-8 rounded border border-input cursor-pointer"
                       />
-                      <input
+                      <Input
                         type="text"
                         name="label"
                         defaultValue={tier.label}
                         required
-                        className="flex-1 px-2 py-1.5 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="flex-1 bg-card"
                       />
                       <Button type="submit" size="sm" disabled={isSubmitting}>
                         Save
@@ -375,23 +352,18 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           {showAddActivity && (
             <Form
               method="post"
-              className="flex items-end gap-2 mb-4 p-3 rounded-lg border bg-card"
+              className="flex items-end gap-2 mb-4 p-3 rounded-lg border border-border-light bg-card"
               onSubmit={() => setShowAddActivity(false)}
             >
               <input type="hidden" name="intent" value="create-activity" />
               <div className="flex-1">
-                <label
-                  htmlFor="activity-name"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Name
-                </label>
-                <input
+                <Label htmlFor="activity-name">Name</Label>
+                <Input
                   type="text"
                   name="name"
                   id="activity-name"
                   required
-                  className="w-full mt-1 px-2 py-1.5 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="mt-1 bg-card"
                 />
               </div>
               <Button type="submit" size="sm" disabled={isSubmitting}>
@@ -414,7 +386,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               return (
                 <div
                   key={act.id}
-                  className="flex items-center gap-2 rounded-lg border bg-card p-3"
+                  className="flex items-center gap-2 rounded-lg border border-border-light bg-card p-3"
                 >
                   {/* Reorder buttons */}
                   <div className="flex flex-col">
@@ -448,12 +420,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                         value="update-activity"
                       />
                       <input type="hidden" name="activityId" value={act.id} />
-                      <input
+                      <Input
                         type="text"
                         name="name"
                         defaultValue={act.name}
                         required
-                        className="flex-1 px-2 py-1.5 text-sm rounded-md border border-input bg-transparent focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="flex-1 bg-card"
                       />
                       <Button type="submit" size="sm" disabled={isSubmitting}>
                         Save
