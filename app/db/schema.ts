@@ -1,4 +1,9 @@
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import {
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core'
 
 // ─── Auth tables (better-auth) ───────────────────────────────────────────────
 
@@ -61,7 +66,9 @@ export const verification = sqliteTable('verification', {
 export const closenessTier = sqliteTable(
   'closeness_tier',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     label: text('label').notNull(),
     sortOrder: integer('sort_order').notNull(),
     color: text('color'),
@@ -80,7 +87,9 @@ export const closenessTier = sqliteTable(
 // ─── Friends ─────────────────────────────────────────────────────────────────
 
 export const friend = sqliteTable('friend', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   photo: text('photo'),
   phone: text('phone'),
@@ -120,7 +129,9 @@ export const friend = sqliteTable('friend', {
 export const activity = sqliteTable(
   'activity',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     name: text('name').notNull(),
     icon: text('icon'),
     isDefault: integer('is_default', { mode: 'boolean' })
@@ -140,7 +151,9 @@ export const activity = sqliteTable(
 export const friendActivity = sqliteTable(
   'friend_activity',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     friendId: text('friend_id')
       .notNull()
       .references(() => friend.id, { onDelete: 'cascade' }),
@@ -157,7 +170,9 @@ export const friendActivity = sqliteTable(
 // ─── Availability ────────────────────────────────────────────────────────────
 
 export const availability = sqliteTable('availability', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   friendId: text('friend_id')
     .notNull()
     .references(() => friend.id, { onDelete: 'cascade' }),
@@ -174,7 +189,9 @@ export const availability = sqliteTable('availability', {
 export const friendConnection = sqliteTable(
   'friend_connection',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     friendAId: text('friend_a_id')
       .notNull()
       .references(() => friend.id, { onDelete: 'cascade' }),
@@ -205,16 +222,16 @@ export const friendConnection = sqliteTable(
 // ─── Gift Ideas ──────────────────────────────────────────────────────────────
 
 export const giftIdea = sqliteTable('gift_idea', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   friendId: text('friend_id')
     .notNull()
     .references(() => friend.id, { onDelete: 'cascade' }),
   description: text('description').notNull(),
   url: text('url'),
   price: text('price'),
-  purchased: integer('purchased', { mode: 'boolean' })
-    .notNull()
-    .default(false),
+  purchased: integer('purchased', { mode: 'boolean' }).notNull().default(false),
   purchasedAt: text('purchased_at'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
@@ -224,7 +241,9 @@ export const giftIdea = sqliteTable('gift_idea', {
 // ─── Events ──────────────────────────────────────────────────────────────────
 
 export const event = sqliteTable('event', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   activityId: text('activity_id').references(() => activity.id, {
     onDelete: 'set null',
@@ -249,7 +268,9 @@ export const event = sqliteTable('event', {
 export const eventInvitation = sqliteTable(
   'event_invitation',
   {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     eventId: text('event_id')
       .notNull()
       .references(() => event.id, { onDelete: 'cascade' }),
@@ -279,7 +300,9 @@ export const eventInvitation = sqliteTable(
 // ─── Notes / Journal ─────────────────────────────────────────────────────────
 
 export const note = sqliteTable('note', {
-  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   content: text('content').notNull(),
   type: text('type').notNull(),
   friendId: text('friend_id').references(() => friend.id, {

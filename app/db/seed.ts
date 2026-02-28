@@ -85,14 +85,18 @@ async function seed() {
   // Seed closeness tiers
   console.log('Seeding closeness tiers...')
   for (const tier of defaultTiers) {
-    db.insert(schema.closenessTier).values({ ...tier, userId }).run()
+    db.insert(schema.closenessTier)
+      .values({ ...tier, userId })
+      .run()
   }
   console.log(`Seeded ${defaultTiers.length} closeness tiers.`)
 
   // Seed activities
   console.log('Seeding activities...')
   for (const act of defaultActivities) {
-    db.insert(schema.activity).values({ ...act, userId }).run()
+    db.insert(schema.activity)
+      .values({ ...act, userId })
+      .run()
   }
   console.log(`Seeded ${defaultActivities.length} activities.`)
 
