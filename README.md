@@ -1,18 +1,37 @@
 # Friend Focus
 
-A full-stack application built with React Router v7, TypeScript, and modern tooling.
+A personal friendship CRM to help you stay intentional about the people you
+care about. Track friends, plan events, log journal entries, and get
+recommendations for who to reach out to next.
+
+## Features
+
+- **Friends** — Store contact info, birthdays, love languages, dietary
+  preferences, and personal notes for each friend
+- **Closeness tiers** — Organize friends by how close you are (e.g., inner
+  circle, close, casual) with customizable labels
+- **Events** — Plan hangouts with activity suggestions, invite friends, and
+  track attendance
+- **Relationships** — Map connections between friends with strength ratings and
+  visualize your social graph
+- **Journal** — Log interactions and reflections tied to friends or events
+- **Care mode** — Flag friends going through a tough time so you remember to
+  check in
+- **Dashboard** — See upcoming birthdays, recent activity, friends in care mode,
+  and recommendations for who to reach out to
 
 ## Quick Start
 
 ```bash
 pnpm install
+pnpm db:migrate
+pnpm db:seed      # Creates test@example.com / password123
 pnpm dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Register an account, log in,
-explore the protected route — the full auth flow works out of the box.
+Open [http://localhost:5173](http://localhost:5173).
 
-## What's Included
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -20,36 +39,30 @@ explore the protected route — the full auth flow works out of the box.
 | Language | TypeScript 5 (strict) |
 | Build | Vite |
 | Styling | Tailwind CSS v4 (OKLCH color system) |
+| Components | shadcn/ui (Radix UI) |
 | Database | Drizzle ORM + SQLite |
 | Auth | better-auth (email/password, session-based) |
 | Forms | Conform + Zod (progressive enhancement) |
-| State | Zustand (client UI state) |
-| Linting | Biome (formatting + linting) |
+| Linting | Biome |
 | Testing | Vitest + Testing Library |
-
-## Documentation
-
-Everything you need to know is in the [`docs/`](./docs) folder:
-
-- [**Getting Started**](./docs/getting-started.md) — Setup, commands, project
-  structure
-- [**Topic Guides**](./docs/README.md) — How each piece works (routing, database,
-  auth, forms, styling, testing, deployment)
-- [**Decisions**](./docs/README.md#decisions) — Why we chose each technology, with
-  alternatives considered
 
 ## Commands
 
 ```bash
-pnpm dev           # Start dev server
+pnpm dev           # Start dev server (localhost:5173)
 pnpm build         # Production build
 pnpm lint:fix      # Format and fix lint issues
 pnpm typecheck     # TypeScript check
 pnpm test          # Run tests
+pnpm db:generate   # Generate migrations after schema changes
+pnpm db:migrate    # Run migrations
 pnpm db:studio     # Visual database browser
 ```
 
-See [Getting Started](./docs/getting-started.md) for the full command reference.
+## Documentation
+
+See the [`docs/`](./docs) folder for topic guides on routing, database,
+authentication, forms, styling, testing, and deployment.
 
 ## License
 

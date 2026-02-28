@@ -6,7 +6,7 @@ what you need here.
 
 ## Getting Started
 
-New to the template? Start here:
+New to the project? Start here:
 
 - [**Getting Started**](./getting-started.md) — Clone, setup, and first run
 - [**Development Workflow**](./development-workflow.md) — Branching, PRs,
@@ -14,8 +14,7 @@ New to the template? Start here:
 
 ## Topic Guides
 
-These guides explain how each piece of the template works and how to customize
-it for your project.
+These guides explain how each piece of the stack works.
 
 - [**Routing**](./routing.md) — React Router v7 conventions, loaders, actions
 - [**Database**](./database.md) — Drizzle ORM, SQLite, migrations, seeding
@@ -50,7 +49,6 @@ wondering "why X instead of Y?", these are for you.
 
 ## Contributing
 
-If you're modifying this template itself (not just using it as a starting
-point), please update the relevant documentation when you make changes. If
-you're adding a new technology or replacing an existing one, write a decision
-document explaining why.
+Please update the relevant documentation when you make changes. If you're
+adding a new technology or replacing an existing one, write a decision document
+explaining why.
