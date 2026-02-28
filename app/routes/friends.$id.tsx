@@ -2,25 +2,49 @@ import { parseWithZod } from '@conform-to/zod/v4'
 import {
   Briefcase,
   Cake,
+  CalendarDays,
+  Check,
+  Clock,
   Edit,
+  FileText,
+  Gift,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
+  Plus,
+  Sparkles,
   Trash2,
+  Users,
+  X,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Form, Link, useActionData, useRouteError } from 'react-router'
 import { ActivityInterestsSummary } from '~/components/activity-interests-summary'
 import { CareModeBadge, CareModeBanner } from '~/components/care-mode-indicator'
+import { Avatar } from '~/components/ui/avatar'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { ErrorDisplay } from '~/components/ui/error-display'
+import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
+import { Input } from '~/components/ui/input'
+import { SectionCard } from '~/components/ui/section-card'
+import { Select } from '~/components/ui/select'
+import { StrengthDots } from '~/components/ui/strength-dots'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
 import { APP_NAME } from '~/config'
 import {
   createAvailability,
   deleteAvailability,
 } from '~/lib/availability.server'
-import { formatBirthday } from '~/lib/format'
+import { formatBirthday, formatDate } from '~/lib/format'
 import { getFriendDetail, getFriendOptions } from '~/lib/friend.server'
 import {
   createConnection,
@@ -34,11 +58,14 @@ import {
 import { createNote, deleteNote, updateNote } from '~/lib/note.server'
 import {
   availabilitySchema,
+  CONNECTION_STRENGTHS,
+  CONNECTION_TYPE_COLORS,
   friendConnectionSchema,
   giftIdeaSchema,
   noteSchema,
 } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
+import { cn } from '~/lib/utils'
 import type { Route } from './+types/friends.$id'
 
 export function meta({ data }: Route.MetaArgs) {
@@ -156,13 +183,17 @@ export async function action({ request, params }: Route.ActionArgs) {
 export default function FriendDetail({ loaderData }: Route.ComponentProps) {
   const { friend, allFriends } = loaderData
   const actionData = useActionData<typeof action>()
+  const [addingGift, setAddingGift] = useState(false)
+  const [addingAvailability, setAddingAvailability] = useState(false)
+  const [addingConnection, setAddingConnection] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
 
-  const initials = friend.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const otherFriends = allFriends.filter(f => f.id !== friend.id)
+
+  const attendedCount = friend.invitations.filter(i => i.attended).length
+  const totalEvents = friend.invitations.length
+  const attendancePercent =
+    totalEvents > 0 ? Math.round((attendedCount / totalEvents) * 100) : 0
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -183,9 +214,11 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
-              {initials}
-            </div>
+            <Avatar
+              name={friend.name}
+              size="lg"
+              color={friend.tierColor || undefined}
+            />
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold">{friend.name}</h2>
@@ -202,14 +235,14 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                 {friend.careModeActive && <CareModeBadge size="md" />}
               </div>
               <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground flex-wrap">
-                {friend.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={14} /> {friend.location}
-                  </span>
-                )}
                 {friend.birthday && (
                   <span className="flex items-center gap-1">
                     <Cake size={14} /> {formatBirthday(friend.birthday)}
+                  </span>
+                )}
+                {friend.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin size={14} /> {friend.location}
                   </span>
                 )}
                 {(friend.occupation || friend.employer) && (
@@ -319,16 +352,17 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
         )}
       </div>
 
-      {/* Detail sections */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="rounded-xl border border-border-light bg-card p-5">
-          <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            Activity Interests
-          </h3>
+      {/* Detail sections — three columns */}
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        {/* Activity Interests */}
+        <SectionCard
+          icon={<Sparkles size={18} className="text-primary" />}
+          title="Activity Interests"
+        >
           {friend.activityRatings && friend.activityRatings.length > 0 ? (
             <ActivityInterestsSummary ratings={friend.activityRatings} />
           ) : (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               No activity ratings yet.{' '}
               <Link
                 to={`/friends/${friend.id}/edit`}
@@ -338,380 +372,452 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
               </Link>
             </p>
           )}
-        </div>
-        <div className="rounded-xl border border-border-light bg-card p-5">
-          <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            Gift Ideas
-          </h3>
-          <GiftSection giftIdeas={friend.gifts} />
-        </div>
-        <div className="rounded-xl border border-border-light bg-card p-5">
-          <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            Availability
-          </h3>
-          <AvailabilitySection availabilities={friend.availabilities} />
-        </div>
+        </SectionCard>
+
+        {/* Gift Ideas */}
+        <SectionCard
+          icon={<Gift size={18} className="text-primary" />}
+          title="Gift Ideas"
+          count={friend.gifts.length}
+          action={
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => setAddingGift(!addingGift)}
+            >
+              <Plus size={14} />
+              Add
+            </Button>
+          }
+        >
+          {addingGift && (
+            <Form
+              method="post"
+              className="flex gap-2 mb-3 pb-3 border-b border-border-light"
+              onSubmit={() => setAddingGift(false)}
+            >
+              <input type="hidden" name="intent" value="add-gift" />
+              <Input
+                name="description"
+                placeholder="Gift idea..."
+                required
+                className="flex-1"
+              />
+              <Input name="price" placeholder="Price" className="w-20" />
+              <Button size="sm" type="submit">
+                Save
+              </Button>
+            </Form>
+          )}
+          {friend.gifts.length > 0 ? (
+            <div className="space-y-2">
+              {friend.gifts.map(gift => (
+                <div
+                  key={gift.id}
+                  className="flex items-center justify-between text-sm group"
+                >
+                  <span
+                    className={
+                      gift.purchased ? 'line-through text-muted-foreground' : ''
+                    }
+                  >
+                    {gift.description}
+                    {gift.price && (
+                      <span className="text-muted-foreground ml-1">
+                        (${gift.price})
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex gap-1">
+                    <Form method="post">
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="toggle-gift-purchased"
+                      />
+                      <input type="hidden" name="giftId" value={gift.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {gift.purchased ? 'Undo' : 'Bought'}
+                      </button>
+                    </Form>
+                    <Form method="post">
+                      <input type="hidden" name="intent" value="delete-gift" />
+                      <input type="hidden" name="giftId" value={gift.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-destructive hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </Form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !addingGift ? (
+            <p className="text-sm text-muted-foreground">
+              No gift ideas yet.{' '}
+              <button
+                type="button"
+                onClick={() => setAddingGift(true)}
+                className="text-primary hover:underline"
+              >
+                Add one
+              </button>
+            </p>
+          ) : null}
+        </SectionCard>
+
+        {/* Availability */}
+        <SectionCard
+          icon={<Clock size={18} className="text-primary" />}
+          title="Availability"
+          count={friend.availabilities.length}
+          action={
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => setAddingAvailability(!addingAvailability)}
+            >
+              <Plus size={14} />
+              Add
+            </Button>
+          }
+        >
+          {addingAvailability && (
+            <Form
+              method="post"
+              className="flex gap-2 mb-3 pb-3 border-b border-border-light"
+              onSubmit={() => setAddingAvailability(false)}
+            >
+              <input type="hidden" name="intent" value="add-availability" />
+              <Input
+                name="label"
+                placeholder="Label"
+                required
+                className="flex-1"
+              />
+              <Input name="startDate" type="date" required className="w-32" />
+              <Input name="endDate" type="date" required className="w-32" />
+              <Button size="sm" type="submit">
+                Save
+              </Button>
+            </Form>
+          )}
+          {friend.availabilities.length > 0 ? (
+            <div className="space-y-2">
+              {friend.availabilities.map(a => (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between text-sm group"
+                >
+                  <div>
+                    <span className="font-medium">{a.label}</span>
+                    <span className="text-muted-foreground ml-2 text-xs">
+                      {a.startDate} to {a.endDate}
+                    </span>
+                  </div>
+                  <Form method="post">
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value="delete-availability"
+                    />
+                    <input type="hidden" name="availabilityId" value={a.id} />
+                    <button
+                      type="submit"
+                      className="text-xs text-destructive hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </Form>
+                </div>
+              ))}
+            </div>
+          ) : !addingAvailability ? (
+            <p className="text-sm text-muted-foreground">
+              No availability windows yet.{' '}
+              <button
+                type="button"
+                onClick={() => setAddingAvailability(true)}
+                className="text-primary hover:underline"
+              >
+                Add one
+              </button>
+            </p>
+          ) : null}
+        </SectionCard>
       </div>
 
       {/* Connections */}
-      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
-        <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-          Connections
-        </h3>
-        <ConnectionSection
-          friendId={friend.id}
-          connections={friend.connections}
-          friends={allFriends}
-        />
-      </div>
+      <SectionCard
+        className="mb-6"
+        icon={<Users size={18} className="text-primary" />}
+        title="Connections"
+        count={friend.connections.length}
+        action={
+          otherFriends.length > 0 ? (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => setAddingConnection(!addingConnection)}
+            >
+              <Plus size={14} />
+              Add
+            </Button>
+          ) : undefined
+        }
+      >
+        {addingConnection && (
+          <Form
+            method="post"
+            className="flex items-center gap-3 mb-4 pb-4 border-b border-border-light"
+            onSubmit={() => setAddingConnection(false)}
+          >
+            <input type="hidden" name="intent" value="add-connection" />
+            <input type="hidden" name="friendAId" value={friend.id} />
+            <Select name="friendBId" required className="flex-1">
+              <option value="">Select friend...</option>
+              {otherFriends.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </Select>
+            <Select name="strength" defaultValue="3" className="w-24">
+              {CONNECTION_STRENGTHS.map((s, i) => (
+                <option key={s} value={i + 1}>
+                  {i + 1} — {s}
+                </option>
+              ))}
+            </Select>
+            <Button size="sm" type="submit">
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              onClick={() => setAddingConnection(false)}
+            >
+              Cancel
+            </Button>
+          </Form>
+        )}
+        {friend.connections.length > 0 ? (
+          <div className="space-y-2">
+            {friend.connections.map(c => {
+              const strengthLabel =
+                CONNECTION_STRENGTHS[(c.strength ?? 3) - 1] || 'Unknown'
+              const tierColor = c.otherFriendTierColor
+              const typeColor = c.type
+                ? CONNECTION_TYPE_COLORS[c.type]
+                : undefined
+              return (
+                <div
+                  key={c.id}
+                  className={cn(
+                    'flex items-center justify-between py-3 px-4 rounded-lg border group',
+                    typeColor
+                      ? `${typeColor.bg} ${typeColor.text} ${typeColor.border}`
+                      : 'border-border-light',
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      name={c.otherFriendName}
+                      size="sm"
+                      color={tierColor || undefined}
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={`/friends/${c.otherFriendId}`}
+                          className="text-sm font-medium hover:text-primary transition-colors"
+                        >
+                          {c.otherFriendName}
+                        </Link>
+                        {c.type && (
+                          <span className="text-xs opacity-75">{c.type}</span>
+                        )}
+                      </div>
+                      <StrengthDots
+                        value={c.strength ?? 3}
+                        label={strengthLabel}
+                        className="text-muted-foreground"
+                      />
+                    </div>
+                  </div>
+                  <InlineConfirmDelete>
+                    <Form method="post" className="inline">
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="delete-connection"
+                      />
+                      <input type="hidden" name="connectionId" value={c.id} />
+                      <button
+                        type="submit"
+                        className="text-destructive hover:text-destructive/80 transition-colors p-1"
+                        aria-label="Confirm delete"
+                      >
+                        <Check size={14} />
+                      </button>
+                    </Form>
+                  </InlineConfirmDelete>
+                </div>
+              )
+            })}
+          </div>
+        ) : !addingConnection ? (
+          <p className="text-sm text-muted-foreground">
+            No connections yet.{' '}
+            {otherFriends.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setAddingConnection(true)}
+                className="text-primary hover:underline"
+              >
+                Add one
+              </button>
+            )}
+          </p>
+        ) : null}
+      </SectionCard>
 
       {/* Event History */}
-      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
-        <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-          Event History
-        </h3>
-        <EventHistorySection invitations={friend.invitations} />
-      </div>
+      <SectionCard
+        className="mb-6"
+        icon={<CalendarDays size={18} className="text-primary" />}
+        title="Event History"
+        count={totalEvents}
+      >
+        {totalEvents > 0 ? (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              Attended {attendedCount} of {totalEvents} events (
+              {attendancePercent}%)
+            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-center">Attended</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {friend.invitations.map(inv => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        to={`/events/${inv.eventId}`}
+                        className="font-medium hover:text-primary transition-colors"
+                      >
+                        {inv.eventName}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {inv.eventDate ? formatDate(inv.eventDate) : '—'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {inv.attended === true && (
+                        <Check
+                          size={16}
+                          className="inline-block text-success"
+                        />
+                      )}
+                      {inv.attended === false && (
+                        <X
+                          size={16}
+                          className="inline-block text-destructive"
+                        />
+                      )}
+                      {inv.attended === null && (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No event history yet.</p>
+        )}
+      </SectionCard>
 
       {/* Notes */}
-      <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
-        <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-          Notes
-        </h3>
-        <NoteSection notes={friend.notes} />
-      </div>
-    </div>
-  )
-}
-
-/** Inline gift ideas CRUD */
-function GiftSection({
-  giftIdeas,
-}: {
-  giftIdeas: Array<{
-    id: string
-    description: string
-    url: string | null
-    price: string | null
-    purchased: boolean
-    purchasedAt: string | null
-  }>
-}) {
-  return (
-    <div className="space-y-2">
-      {giftIdeas.map(gift => (
-        <div
-          key={gift.id}
-          className="flex items-center justify-between text-sm"
-        >
-          <span
-            className={
-              gift.purchased ? 'line-through text-muted-foreground' : ''
-            }
+      <SectionCard
+        icon={<FileText size={18} className="text-primary" />}
+        title="Notes"
+        count={friend.notes.length}
+        action={
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => setAddingNote(!addingNote)}
           >
-            {gift.description}
-            {gift.price && (
-              <span className="text-muted-foreground ml-1">
-                (${gift.price})
-              </span>
-            )}
-          </span>
-          <div className="flex gap-1">
-            <Form method="post">
-              <input
-                type="hidden"
-                name="intent"
-                value="toggle-gift-purchased"
-              />
-              <input type="hidden" name="giftId" value={gift.id} />
-              <button
-                type="submit"
-                className="text-xs text-primary hover:underline"
-              >
-                {gift.purchased ? 'Undo' : 'Bought'}
-              </button>
-            </Form>
-            <Form method="post">
-              <input type="hidden" name="intent" value="delete-gift" />
-              <input type="hidden" name="giftId" value={gift.id} />
-              <button
-                type="submit"
-                className="text-xs text-destructive hover:underline"
-              >
-                Remove
-              </button>
-            </Form>
-          </div>
-        </div>
-      ))}
-      <Form method="post" className="flex gap-2 mt-2">
-        <input type="hidden" name="intent" value="add-gift" />
-        <input
-          name="description"
-          placeholder="Gift idea..."
-          required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <input
-          name="price"
-          placeholder="Price"
-          className="w-20 px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <button
-          type="submit"
-          className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground"
-        >
-          Add
-        </button>
-      </Form>
-    </div>
-  )
-}
-
-/** Inline availability CRUD */
-function AvailabilitySection({
-  availabilities,
-}: {
-  availabilities: Array<{
-    id: string
-    label: string
-    startDate: string
-    endDate: string
-  }>
-}) {
-  return (
-    <div className="space-y-2">
-      {availabilities.map(a => (
-        <div key={a.id} className="flex items-center justify-between text-sm">
-          <div>
-            <span className="font-medium">{a.label}</span>
-            <span className="text-muted-foreground ml-2 text-xs">
-              {a.startDate} to {a.endDate}
-            </span>
-          </div>
-          <Form method="post">
-            <input type="hidden" name="intent" value="delete-availability" />
-            <input type="hidden" name="availabilityId" value={a.id} />
-            <button
-              type="submit"
-              className="text-xs text-destructive hover:underline"
-            >
-              Remove
-            </button>
-          </Form>
-        </div>
-      ))}
-      <Form method="post" className="flex gap-2 mt-2">
-        <input type="hidden" name="intent" value="add-availability" />
-        <input
-          name="label"
-          placeholder="Label"
-          required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <input
-          name="startDate"
-          type="date"
-          required
-          className="px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <input
-          name="endDate"
-          type="date"
-          required
-          className="px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <button
-          type="submit"
-          className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground"
-        >
-          Add
-        </button>
-      </Form>
-    </div>
-  )
-}
-
-/** Inline connection CRUD */
-function ConnectionSection({
-  friendId,
-  connections,
-  friends,
-}: {
-  friendId: string
-  connections: Array<{
-    id: string
-    type: string | null
-    strength: number
-    otherFriendId: string
-    otherFriendName: string
-  }>
-  friends: Array<{ id: string; name: string }>
-}) {
-  const otherFriends = friends.filter(f => f.id !== friendId)
-
-  return (
-    <div className="space-y-2">
-      {connections.length > 0 ? (
-        <div className="space-y-2">
-          {connections.map(c => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between text-sm"
-            >
-              <div>
-                <Link
-                  to={`/friends/${c.otherFriendId}`}
-                  className="text-primary hover:underline"
-                >
-                  {c.otherFriendName}
-                </Link>
-                {c.type && (
-                  <span className="text-muted-foreground ml-2">({c.type})</span>
-                )}
-                <span className="text-muted-foreground ml-2 text-xs">
-                  Strength: {c.strength}/5
-                </span>
-              </div>
-              <Form method="post">
-                <input type="hidden" name="intent" value="delete-connection" />
-                <input type="hidden" name="connectionId" value={c.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-destructive hover:underline"
-                >
-                  Remove
-                </button>
-              </Form>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">No connections yet.</p>
-      )}
-      {otherFriends.length > 0 && (
-        <Form method="post" className="flex gap-2 mt-2">
-          <input type="hidden" name="intent" value="add-connection" />
-          <input type="hidden" name="friendAId" value={friendId} />
-          <select
-            name="friendBId"
-            required
-            className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
-          >
-            <option value="">Select friend...</option>
-            {otherFriends.map(f => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
-          <select
-            name="strength"
-            className="w-20 px-2 py-1 text-sm rounded border border-input bg-card"
-          >
-            <option value="3">3</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <button
-            type="submit"
-            className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground"
-          >
+            <Plus size={14} />
             Add
-          </button>
-        </Form>
-      )}
-    </div>
-  )
-}
-
-/** Event history timeline */
-function EventHistorySection({
-  invitations,
-}: {
-  invitations: Array<{
-    id: string
-    eventId: string
-    eventName: string
-    eventDate: string | null
-    eventStatus: string
-    status: string
-    attended: boolean | null
-  }>
-}) {
-  if (invitations.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground">No event history yet.</p>
-    )
-  }
-
-  return (
-    <div className="space-y-2">
-      {invitations.map(inv => (
-        <div key={inv.id} className="flex items-center justify-between text-sm">
-          <Link
-            to={`/events/${inv.eventId}`}
-            className="text-primary hover:underline"
+          </Button>
+        }
+      >
+        {addingNote && (
+          <Form
+            method="post"
+            className="flex gap-2 mb-3 pb-3 border-b border-border-light"
+            onSubmit={() => setAddingNote(false)}
           >
-            {inv.eventName}
-          </Link>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {inv.eventDate && <span>{inv.eventDate}</span>}
-            <span className="capitalize">{inv.status.replace('_', ' ')}</span>
-            {inv.attended !== null && (
-              <span>{inv.attended ? 'Attended' : 'Did not attend'}</span>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/** Inline notes CRUD */
-function NoteSection({
-  notes,
-}: {
-  notes: Array<{
-    id: string
-    content: string
-    createdAt: Date
-  }>
-}) {
-  return (
-    <div className="space-y-2">
-      {notes.map(n => (
-        <div key={n.id} className="flex items-start justify-between text-sm">
-          <p className="flex-1">{n.content}</p>
-          <Form method="post" className="shrink-0 ml-2">
-            <input type="hidden" name="intent" value="delete-note" />
-            <input type="hidden" name="noteId" value={n.id} />
-            <button
-              type="submit"
-              className="text-xs text-destructive hover:underline"
-            >
-              Delete
-            </button>
+            <input type="hidden" name="intent" value="add-note" />
+            <Input
+              name="content"
+              placeholder="Add a note..."
+              required
+              className="flex-1"
+            />
+            <Button size="sm" type="submit">
+              Save
+            </Button>
           </Form>
-        </div>
-      ))}
-      <Form method="post" className="flex gap-2 mt-2">
-        <input type="hidden" name="intent" value="add-note" />
-        <input
-          name="content"
-          placeholder="Add a note..."
-          required
-          className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
-        />
-        <button
-          type="submit"
-          className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground"
-        >
-          Add
-        </button>
-      </Form>
+        )}
+        {friend.notes.length > 0 ? (
+          <div className="space-y-2">
+            {friend.notes.map(n => (
+              <div
+                key={n.id}
+                className="flex items-start justify-between text-sm"
+              >
+                <p className="flex-1">{n.content}</p>
+                <Form method="post" className="shrink-0 ml-2">
+                  <input type="hidden" name="intent" value="delete-note" />
+                  <input type="hidden" name="noteId" value={n.id} />
+                  <button
+                    type="submit"
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    Delete
+                  </button>
+                </Form>
+              </div>
+            ))}
+          </div>
+        ) : !addingNote ? (
+          <p className="text-sm text-muted-foreground">
+            No notes yet.{' '}
+            <button
+              type="button"
+              onClick={() => setAddingNote(true)}
+              className="text-primary hover:underline"
+            >
+              Add one
+            </button>
+          </p>
+        ) : null}
+      </SectionCard>
     </div>
   )
 }

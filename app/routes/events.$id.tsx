@@ -1,6 +1,5 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import {
-  ArrowLeft,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -13,14 +12,24 @@ import {
   Sparkles,
   Trash2,
   Users,
-  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link, redirect, useRouteError } from 'react-router'
+import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { ErrorDisplay } from '~/components/ui/error-display'
+import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { Select } from '~/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
 import {
@@ -185,13 +194,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <Link
-        to="/events"
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Back to Events
-      </Link>
+      <BackLink to="/events">Back to Events</BackLink>
 
       {/* Event header */}
       {editing ? (
@@ -310,17 +313,14 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           <div className="p-4 border-b bg-muted/50">
             <Form method="post" className="flex items-center gap-3">
               <input type="hidden" name="intent" value="add-guest" />
-              <select
-                name="friendId"
-                className="flex-1 h-9 rounded-md border border-input bg-card px-3 text-sm"
-              >
+              <Select name="friendId" className="flex-1">
                 <option value="">Select a friend...</option>
                 {availableFriends.map(f => (
                   <option key={f.id} value={f.id}>
                     {f.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               <Button size="sm" type="submit">
                 Add
               </Button>
@@ -342,24 +342,22 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
             <p>No guests yet. Add friends to the guest list.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-xs text-muted-foreground border-b">
-                  <th className="text-left py-3 px-4">Name</th>
-                  <th className="text-left py-3 px-4">Tier</th>
-                  <th className="text-left py-3 px-4">RSVP</th>
-                  <th className="text-left py-3 px-4">Attended</th>
-                  <th className="text-right py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {event.invitations.map(inv => (
-                  <GuestRow key={inv.id} invitation={inv} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Tier</TableHead>
+                <TableHead>RSVP</TableHead>
+                <TableHead>Attended</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {event.invitations.map(inv => (
+                <GuestRow key={inv.id} invitation={inv} />
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 
@@ -389,18 +387,15 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           ))}
           <Form method="post" className="flex gap-2 mt-2">
             <input type="hidden" name="intent" value="add-note" />
-            <input
+            <Input
               name="content"
               placeholder="Add a note..."
               required
-              className="flex-1 px-2 py-1 text-sm rounded border border-input bg-card"
+              className="flex-1"
             />
-            <button
-              type="submit"
-              className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground"
-            >
+            <Button size="sm" type="submit">
               Add
-            </button>
+            </Button>
           </Form>
         </div>
       </div>
@@ -629,19 +624,17 @@ function GuestRow({
     attended: boolean | null
   }
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
-
   return (
-    <tr className="border-b hover:bg-accent/50 transition-colors">
-      <td className="py-3 px-4">
+    <TableRow className="group">
+      <TableCell className="font-medium">
         <Link
           to={`/friends/${invitation.friendId}`}
-          className="text-sm font-medium hover:text-primary"
+          className="hover:text-primary"
         >
           {invitation.friendName}
         </Link>
-      </td>
-      <td className="py-3 px-4">
+      </TableCell>
+      <TableCell>
         {invitation.tierLabel ? (
           <span
             className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -656,75 +649,59 @@ function GuestRow({
         ) : (
           <span className="text-xs text-muted-foreground">No tier</span>
         )}
-      </td>
-      <td className="py-3 px-4">
+      </TableCell>
+      <TableCell>
         <Form method="post" className="inline">
           <input type="hidden" name="intent" value="update-rsvp" />
           <input type="hidden" name="invitationId" value={invitation.id} />
-          <select
+          <Select
             name="status"
             defaultValue={invitation.status}
             onChange={e => e.target.form?.requestSubmit()}
-            className="text-xs px-2 py-1 rounded-lg border border-input bg-card font-medium"
+            className="h-7 text-xs w-auto"
           >
             {INVITATION_STATUSES.map(s => (
               <option key={s} value={s}>
                 {INVITATION_STATUS_LABELS[s]}
               </option>
             ))}
-          </select>
+          </Select>
         </Form>
-      </td>
-      <td className="py-3 px-4">
+      </TableCell>
+      <TableCell>
         <Form method="post" className="inline">
           <input type="hidden" name="intent" value="update-attended" />
           <input type="hidden" name="invitationId" value={invitation.id} />
-          <select
+          <Select
             name="attended"
             defaultValue={
               invitation.attended === null ? '' : String(invitation.attended)
             }
             onChange={e => e.target.form?.requestSubmit()}
-            className="text-xs px-2 py-1 rounded-lg border border-input bg-card font-medium"
+            className="h-7 text-xs w-auto"
           >
             <option value="">{'\u2014'}</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
-          </select>
+          </Select>
         </Form>
-      </td>
-      <td className="py-3 px-4 text-right">
-        {confirmDelete ? (
-          <div className="flex items-center justify-end gap-1">
-            <Form method="post" className="inline">
-              <input type="hidden" name="intent" value="remove-guest" />
-              <input type="hidden" name="invitationId" value={invitation.id} />
-              <button
-                type="submit"
-                className="p-1.5 rounded text-destructive hover:bg-destructive/10"
-              >
-                <Check size={14} />
-              </button>
-            </Form>
+      </TableCell>
+      <TableCell className="text-right">
+        <InlineConfirmDelete>
+          <Form method="post" className="inline">
+            <input type="hidden" name="intent" value="remove-guest" />
+            <input type="hidden" name="invitationId" value={invitation.id} />
             <button
-              type="button"
-              onClick={() => setConfirmDelete(false)}
-              className="p-1.5 rounded text-muted-foreground hover:bg-accent"
+              type="submit"
+              className="text-destructive hover:text-destructive/80 transition-colors p-1"
+              aria-label="Confirm delete"
             >
-              <X size={14} />
+              <Check size={14} />
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 size={14} />
-          </button>
-        )}
-      </td>
-    </tr>
+          </Form>
+        </InlineConfirmDelete>
+      </TableCell>
+    </TableRow>
   )
 }
 
