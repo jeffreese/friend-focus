@@ -259,7 +259,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
       {/* Recommendations — only while planning */}
       {event.status === 'planning' && recommendations.length > 0 && (
         <div className="rounded-xl border border-border-light bg-card mb-6">
-          <div className="p-5 border-b flex items-center justify-between">
+          <div className="p-5 border-b border-border-light flex items-center justify-between">
             <h3 className="font-semibold flex items-center gap-2">
               <Sparkles size={18} className="text-primary" />
               Guest List Recommendations
@@ -296,7 +296,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
 
       {/* Guest list */}
       <div className="rounded-xl border border-border-light bg-card">
-        <div className="p-5 border-b flex items-center justify-between">
+        <div className="p-5 border-b border-border-light flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2">
             <Users size={18} className="text-primary" />
             Guest List ({event.invitations.length}
@@ -309,7 +309,7 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
         </div>
 
         {addingGuest && (
-          <div className="p-4 border-b bg-muted/50">
+          <div className="p-4 border-b border-border-light bg-muted/50">
             <Form method="post" className="flex items-center gap-3">
               <input type="hidden" name="intent" value="add-guest" />
               <Select name="friendId" className="flex-1">
