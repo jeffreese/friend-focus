@@ -65,28 +65,20 @@ describe('login action validation', () => {
 describe('note action validation', () => {
   it('succeeds with valid note data', () => {
     const formData = createFormData({
-      title: 'My Note',
-      body: 'Some content',
+      content: 'Some journal content',
     })
     const submission = parseWithZod(formData, { schema: noteSchema })
     expect(submission.status).toBe('success')
     if (submission.status === 'success') {
-      expect(submission.value.title).toBe('My Note')
-      expect(submission.value.body).toBe('Some content')
+      expect(submission.value.content).toBe('Some journal content')
     }
   })
 
-  it('succeeds without body (optional field)', () => {
-    const formData = createFormData({ title: 'Title Only' })
-    const submission = parseWithZod(formData, { schema: noteSchema })
-    expect(submission.status).toBe('success')
-  })
-
-  it('returns field errors for empty title', () => {
-    const formData = createFormData({ title: '' })
+  it('returns field errors for empty content', () => {
+    const formData = createFormData({ content: '' })
     const submission = parseWithZod(formData, { schema: noteSchema })
     expect(submission.status).toBe('error')
     const result = submission.reply()
-    expect(result.error?.title).toBeDefined()
+    expect(result.error?.content).toBeDefined()
   })
 })

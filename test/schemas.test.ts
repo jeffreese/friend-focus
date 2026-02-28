@@ -104,23 +104,14 @@ describe('resetPasswordSchema', () => {
 describe('noteSchema', () => {
   it('accepts valid note', () => {
     const result = noteSchema.safeParse({
-      title: 'My note',
-      body: 'Some content',
+      content: 'Some journal content',
     })
     expect(result.success).toBe(true)
   })
 
-  it('accepts note without body', () => {
+  it('rejects empty content', () => {
     const result = noteSchema.safeParse({
-      title: 'My note',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('rejects empty title', () => {
-    const result = noteSchema.safeParse({
-      title: '',
-      body: 'Some content',
+      content: '',
     })
     expect(result.success).toBe(false)
   })
