@@ -1,10 +1,90 @@
 # Deployment
 
-The template includes a Docker setup for production deployment. Since we use
-SQLite, there's no external database to configure — the database file lives
-alongside the application.
+The app is deployed to **Fly.io** using Docker with a persistent volume for
+SQLite. The production URL is **https://friend-focus.fly.dev/**.
 
-## Docker
+## Fly.io
+
+### Prerequisites
+
+- [flyctl](https://fly.io/docs/flyctl/install/) CLI installed
+- Fly.io account with billing configured
+
+### Configuration
+
+- **`fly.toml`** — App config (region, volume mount, health checks, VM size)
+- **Region:** `ord` (Chicago)
+- **VM:** `shared-cpu-1x` with 512MB RAM
+- **Volume:** `ff_data` (1GB) mounted at `/data`
+- **Database path:** `/data/sqlite.db` (on persistent volume)
+- **Auto-stop:** Enabled — machine sleeps when idle, wakes on request
+
+### Deploying
+
+```bash
+fly deploy
+```
+
+This builds the Docker image, pushes it, and updates the running machine. The
+app runs database migrations automatically on startup (see
+`app/db/index.server.ts`), so no manual migration step is needed after schema
+changes.
+
+### Useful Commands
+
+```bash
+fly status          # Check app and machine status
+fly logs            # Stream application logs
+fly ssh console     # SSH into the running machine
+fly open            # Open the app in your browser
+fly volumes list    # List volumes and their status
+fly secrets list    # List secret names (values hidden)
+```
+
+### Secrets
+
+Sensitive environment variables are stored as Fly.io secrets (not in
+`fly.toml`):
+
+```bash
+fly secrets set BETTER_AUTH_SECRET=$(openssl rand -base64 32)
+fly secrets set BETTER_AUTH_URL=https://friend-focus.fly.dev
+```
+
+Non-sensitive env vars (`NODE_ENV`, `DATABASE_URL`, `PORT`) are in the `[env]`
+section of `fly.toml`.
+
+### Database Migrations
+
+Drizzle migrations run programmatically at app startup via `migrate()` in
+`app/db/index.server.ts`. This is necessary because Fly.io's `release_command`
+runs in a temporary machine without volume access. Migrations are idempotent —
+already-applied migrations are skipped instantly.
+
+### Important Constraints
+
+- **Single machine only.** SQLite is a single-writer database. Never scale
+  beyond 1 machine (`fly scale count 1`).
+- **Volume is single-region.** The `ff_data` volume only exists in `ord`. The
+  machine must run in the same region.
+- **Volume persists across deploys** but is tied to the machine. If the machine
+  is destroyed, the volume survives and will be reattached.
+
+### Initial Setup (already done)
+
+For reference, the initial setup was:
+
+```bash
+fly auth login
+fly apps create friend-focus
+fly volumes create ff_data --region ord --size 1
+fly secrets set \
+  BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
+  BETTER_AUTH_URL=https://friend-focus.fly.dev
+fly deploy
+```
+
+## Docker (Local)
 
 The `Dockerfile` uses a multi-stage build to keep the production image small:
 
@@ -13,27 +93,16 @@ The `Dockerfile` uses a multi-stage build to keep the production image small:
 3. **Build** — Runs the production build
 4. **Production** — Copies only what's needed to run
 
-Build and run:
+Build and run locally:
 
 ```bash
-docker build -t my-app .
-docker run -p 3000:3000 \
-  -e BETTER_AUTH_SECRET=your-secret-here \
-  -e BETTER_AUTH_URL=http://localhost:3000 \
-  my-app
-```
-
-### Persisting Data
-
-SQLite stores data in a file. To persist it across container restarts, mount a
-volume:
-
-```bash
+docker build -t friend-focus .
 docker run -p 3000:3000 \
   -v ./data:/app/data \
   -e DATABASE_URL=data/sqlite.db \
   -e BETTER_AUTH_SECRET=your-secret-here \
-  my-app
+  -e BETTER_AUTH_URL=http://localhost:3000 \
+  friend-focus
 ```
 
 ## Environment Variables
@@ -52,15 +121,6 @@ will fail to start with a clear error message.
 A warning is logged if `BETTER_AUTH_SECRET` is still the default value in
 production.
 
-### Generating a Secret
-
-The setup script generates a random secret automatically. For production, use a
-cryptographically random string:
-
-```bash
-openssl rand -base64 32
-```
-
 ## Production Build
 
 Without Docker, you can build and run directly:
@@ -74,28 +134,13 @@ The production server runs on port 3000 by default.
 
 ## Health Check
 
-The template includes a health check endpoint at `/api/health` that verifies
-the database connection:
+A health check endpoint at `/api/health` verifies the database connection:
 
 ```bash
-curl http://localhost:3000/api/health
+curl https://friend-focus.fly.dev/api/health
 # {"status":"ok","timestamp":"2026-02-27T..."}
 ```
 
 Returns 200 with `{"status": "ok"}` when healthy, or 500 with
-`{"status": "error"}` if the database is unreachable. Use this for load
-balancer health checks, Docker `HEALTHCHECK`, or uptime monitoring.
-
-## Deployment Platforms
-
-Since this is a Node.js server with SQLite, it works well on platforms that
-support persistent file storage:
-
-- **VPS / VM** — Any Linux server with Node 22 or Docker
-- **Fly.io** — Supports persistent volumes for SQLite
-- **Railway** — Supports persistent storage
-- **DigitalOcean App Platform** — With persistent volumes
-
-Serverless platforms (Vercel, Netlify, Cloudflare) are not a good fit because
-SQLite needs persistent file access. If you need serverless deployment, you'd
-want to swap SQLite for a hosted database.
+`{"status": "error"}` if the database is unreachable. Fly.io checks this
+endpoint every 30 seconds.

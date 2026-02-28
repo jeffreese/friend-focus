@@ -6,5 +6,6 @@ build
 *.db-journal
 *.db-wal
 drizzle/*.db
+fly.toml
 .git
 .DS_Store
