@@ -49,6 +49,7 @@ import { getFriendDetail, getFriendOptions } from '~/lib/friend.server'
 import {
   createConnection,
   deleteConnection,
+  updateConnection,
 } from '~/lib/friend-connection.server'
 import {
   createGiftIdea,
@@ -140,6 +141,21 @@ export async function action({ request, params }: Route.ActionArgs) {
         createConnection(submission.value, userId)
         return { ok: true }
       }
+      case 'update-connection': {
+        const connectionId = formData.get('connectionId') as string
+        if (!connectionId) return { error: 'Connection ID required' }
+        const type = formData.get('type') as string
+        const strength = Number(formData.get('strength'))
+        const howTheyMet = formData.get('howTheyMet') as string
+        const startDate = formData.get('startDate') as string
+        updateConnection(connectionId, {
+          type: type || null,
+          strength: strength || 3,
+          howTheyMet: howTheyMet || null,
+          startDate: startDate || null,
+        })
+        return { ok: true }
+      }
       case 'delete-connection': {
         const connectionId = formData.get('connectionId') as string
         if (connectionId) deleteConnection(connectionId)
@@ -187,6 +203,9 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
   const [addingGift, setAddingGift] = useState(false)
   const [addingAvailability, setAddingAvailability] = useState(false)
   const [addingConnection, setAddingConnection] = useState(false)
+  const [editingConnectionId, setEditingConnectionId] = useState<string | null>(
+    null,
+  )
   const [addingNote, setAddingNote] = useState(false)
 
   const otherFriends = allFriends.filter(f => f.id !== friend.id)
@@ -633,6 +652,81 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
               const typeColor = c.type
                 ? CONNECTION_TYPE_COLORS[c.type]
                 : undefined
+              const isEditing = editingConnectionId === c.id
+
+              if (isEditing) {
+                return (
+                  <Form
+                    key={c.id}
+                    method="post"
+                    className="space-y-2 p-3 rounded-lg border border-border-light bg-muted/30"
+                    onSubmit={() => setEditingConnectionId(null)}
+                  >
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value="update-connection"
+                    />
+                    <input type="hidden" name="connectionId" value={c.id} />
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar
+                        name={c.otherFriendName}
+                        size="sm"
+                        color={tierColor || undefined}
+                      />
+                      <span className="text-sm font-medium">
+                        {c.otherFriendName}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select name="type" defaultValue={c.type || ''}>
+                        <option value="">Type (optional)</option>
+                        {CONNECTION_TYPES.map(t => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </Select>
+                      <Select
+                        name="strength"
+                        defaultValue={String(c.strength ?? 3)}
+                      >
+                        {CONNECTION_STRENGTHS.map((s, i) => (
+                          <option key={s} value={i + 1}>
+                            {i + 1} — {s}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        name="howTheyMet"
+                        placeholder="How they met"
+                        defaultValue={c.howTheyMet || ''}
+                      />
+                      <Input
+                        name="startDate"
+                        type="date"
+                        defaultValue={c.startDate || ''}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" type="submit">
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        type="button"
+                        onClick={() => setEditingConnectionId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </Form>
+                )
+              }
+
               return (
                 <div
                   key={c.id}
@@ -680,23 +774,33 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                       </div>
                     </div>
                   </div>
-                  <InlineConfirmDelete>
-                    <Form method="post" className="inline">
-                      <input
-                        type="hidden"
-                        name="intent"
-                        value="delete-connection"
-                      />
-                      <input type="hidden" name="connectionId" value={c.id} />
-                      <button
-                        type="submit"
-                        className="text-destructive hover:text-destructive/80 transition-colors p-1"
-                        aria-label="Confirm delete"
-                      >
-                        <Check size={14} />
-                      </button>
-                    </Form>
-                  </InlineConfirmDelete>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditingConnectionId(c.id)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all p-1"
+                      aria-label="Edit connection"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <InlineConfirmDelete>
+                      <Form method="post" className="inline">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="delete-connection"
+                        />
+                        <input type="hidden" name="connectionId" value={c.id} />
+                        <button
+                          type="submit"
+                          className="text-destructive hover:text-destructive/80 transition-colors p-1"
+                          aria-label="Confirm delete"
+                        >
+                          <Check size={14} />
+                        </button>
+                      </Form>
+                    </InlineConfirmDelete>
+                  </div>
                 </div>
               )
             })}
