@@ -3,9 +3,12 @@ import { useState } from 'react'
 import { Form, Link } from 'react-router'
 import { ActivityRating } from '~/components/activity-rating'
 import { Button } from '~/components/ui/button'
+import { FieldError } from '~/components/ui/field-error'
+import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
+import { Textarea } from '~/components/ui/textarea'
 
 interface FriendFormProps {
   friend?: {
@@ -48,7 +51,7 @@ export function FriendForm({
   return (
     <Form method="post" className="space-y-6">
       {/* Name */}
-      <div>
+      <FormField>
         <Label htmlFor="name">
           Name <span className="text-destructive">*</span>
         </Label>
@@ -59,13 +62,11 @@ export function FriendForm({
           required
           error={!!errors?.name}
         />
-        {errors?.name && (
-          <p className="text-xs text-destructive mt-1">{errors.name[0]}</p>
-        )}
-      </div>
+        <FieldError errors={errors?.name} />
+      </FormField>
 
       {/* Closeness Tier */}
-      <div>
+      <FormField>
         <Label htmlFor="closenessTierId">Closeness</Label>
         <Select
           id="closenessTierId"
@@ -79,11 +80,11 @@ export function FriendForm({
             </option>
           ))}
         </Select>
-      </div>
+      </FormField>
 
       {/* Contact info */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
+        <FormField>
           <Label htmlFor="phone">Phone</Label>
           <Input
             id="phone"
@@ -91,8 +92,8 @@ export function FriendForm({
             type="tel"
             defaultValue={friend?.phone || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
@@ -101,14 +102,12 @@ export function FriendForm({
             defaultValue={friend?.email || ''}
             error={!!errors?.email}
           />
-          {errors?.email && (
-            <p className="text-xs text-destructive mt-1">{errors.email[0]}</p>
-          )}
-        </div>
+          <FieldError errors={errors?.email} />
+        </FormField>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
+        <FormField>
           <Label htmlFor="birthday">Birthday</Label>
           <Input
             id="birthday"
@@ -116,8 +115,8 @@ export function FriendForm({
             type="date"
             defaultValue={friend?.birthday || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="location">Location</Label>
           <Input
             id="location"
@@ -125,30 +124,30 @@ export function FriendForm({
             defaultValue={friend?.location || ''}
             placeholder="e.g. Denver, CO"
           />
-        </div>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
+        <FormField>
           <Label htmlFor="employer">Employer</Label>
           <Input
             id="employer"
             name="employer"
             defaultValue={friend?.employer || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="occupation">Occupation</Label>
           <Input
             id="occupation"
             name="occupation"
             defaultValue={friend?.occupation || ''}
           />
-        </div>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
+        <FormField>
           <Label htmlFor="loveLanguage">Love Language</Label>
           <Select
             id="loveLanguage"
@@ -162,18 +161,18 @@ export function FriendForm({
             <option value="Acts of Service">Acts of Service</option>
             <option value="Physical Touch">Physical Touch</option>
           </Select>
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="favoriteFood">Favorite Food</Label>
           <Input
             id="favoriteFood"
             name="favoriteFood"
             defaultValue={friend?.favoriteFood || ''}
           />
-        </div>
+        </FormField>
       </div>
 
-      <div>
+      <FormField>
         <Label htmlFor="dietaryRestrictions">Dietary Restrictions</Label>
         <Input
           id="dietaryRestrictions"
@@ -181,9 +180,9 @@ export function FriendForm({
           defaultValue={friend?.dietaryRestrictions || ''}
           placeholder="e.g. Vegetarian, Gluten-free"
         />
-      </div>
+      </FormField>
 
-      <div>
+      <FormField>
         <Label htmlFor="socialHandles">Social Handles</Label>
         <Input
           id="socialHandles"
@@ -191,20 +190,19 @@ export function FriendForm({
           defaultValue={friend?.socialHandles || ''}
           placeholder="e.g. @username"
         />
-      </div>
+      </FormField>
 
       {/* Personal Notes */}
-      <div>
+      <FormField>
         <Label htmlFor="personalNotes">Personal Notes</Label>
-        <textarea
+        <Textarea
           id="personalNotes"
           name="personalNotes"
           defaultValue={friend?.personalNotes || ''}
           rows={4}
           placeholder="Anything you want to remember about this person..."
-          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
         />
-      </div>
+      </FormField>
 
       {/* Care Mode */}
       <CareModeSection
@@ -287,18 +285,17 @@ function CareModeSection({
 
       {active && (
         <div className="mt-3 space-y-3 pl-6">
-          <div>
+          <FormField>
             <Label htmlFor="careModeNote">Care Note</Label>
-            <textarea
+            <Textarea
               id="careModeNote"
               name="careModeNote"
               defaultValue={defaultNote}
               rows={2}
               placeholder="What's going on? e.g. Going through a breakup..."
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
-          </div>
-          <div>
+          </FormField>
+          <FormField>
             <Label htmlFor="careModeReminder">Reminder Cadence</Label>
             <Select
               id="careModeReminder"
@@ -310,7 +307,7 @@ function CareModeSection({
               <option value="every_3_days">Every 3 Days</option>
               <option value="weekly">Weekly</option>
             </Select>
-          </div>
+          </FormField>
         </div>
       )}
     </div>
