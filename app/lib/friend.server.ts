@@ -25,7 +25,11 @@ export function getFriends({
   tierId?: string
   sortBy?: 'name' | 'closeness' | 'createdAt'
 }) {
-  let query = db
+  const conditions = [eq(friend.userId, userId)]
+  if (search) conditions.push(like(friend.name, `%${search}%`))
+  if (tierId) conditions.push(eq(friend.closenessTierId, tierId))
+
+  const query = db
     .select({
       id: friend.id,
       name: friend.name,
@@ -45,30 +49,7 @@ export function getFriends({
     })
     .from(friend)
     .leftJoin(closenessTier, eq(friend.closenessTierId, closenessTier.id))
-    .where(eq(friend.userId, userId))
-    .$dynamic()
-
-  if (search) {
-    query = query.where(
-      and(eq(friend.userId, userId), like(friend.name, `%${search}%`)),
-    )
-  }
-
-  if (tierId) {
-    query = query.where(
-      and(eq(friend.userId, userId), eq(friend.closenessTierId, tierId)),
-    )
-  }
-
-  if (search && tierId) {
-    query = query.where(
-      and(
-        eq(friend.userId, userId),
-        like(friend.name, `%${search}%`),
-        eq(friend.closenessTierId, tierId),
-      ),
-    )
-  }
+    .where(and(...conditions))
 
   if (sortBy === 'closeness') {
     return query.orderBy(asc(closenessTier.sortOrder), asc(friend.name)).all()

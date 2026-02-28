@@ -63,7 +63,14 @@
     }
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.json", "**/*.css"]
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.json",
+      "**/*.css",
+      "!app/db/backup"
+    ]
   },
   "overrides": [
     {

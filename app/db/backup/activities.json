@@ -1,0 +1,12 @@
+[{"id":"cmm18hjbd00083qitbyjog5i9","name":"Poker","icon":"Spade","isDefault":1,"sortOrder":0},
+{"id":"cmm18hjbe00093qitogixn0gf","name":"Ocho","icon":"Circle","isDefault":0,"sortOrder":1},
+{"id":"cmm18hjbe000a3qiteouzhmp2","name":"Cinema","icon":"Film","isDefault":1,"sortOrder":2},
+{"id":"cmm18hjbf000b3qitxxgehavq","name":"Travel","icon":"Plane","isDefault":1,"sortOrder":3},
+{"id":"cmm18hjbf000c3qitk6uhdl0c","name":"Backpacking","icon":"Mountain","isDefault":1,"sortOrder":4},
+{"id":"cmm18hjbg000d3qitlyo28lto","name":"Skiing","icon":"Snowflake","isDefault":1,"sortOrder":5},
+{"id":"cmm18hjbg000e3qitfl55d65g","name":"Bands","icon":"Music","isDefault":1,"sortOrder":6},
+{"id":"cmm18hjbh000f3qit793aeh63","name":"EDM Venues","icon":"Headphones","isDefault":0,"sortOrder":7},
+{"id":"cmm18hjbh000g3qitpwmf8fqu","name":"Hiking","icon":"TreePine","isDefault":1,"sortOrder":8},
+{"id":"cmm18hjbh000h3qitsmyxzxrw","name":"Board Games","icon":"Dice5","isDefault":1,"sortOrder":9},
+{"id":"cmm18hjbi000i3qitlc8eu0o5","name":"Dining Out","icon":"UtensilsCrossed","isDefault":1,"sortOrder":10},
+{"id":"cmm1l12ml000m4citwuwpadxo","name":"Catsit","icon":"Cat","isDefault":0,"sortOrder":11}]

@@ -27,7 +27,8 @@ pnpm db:seed      # Seed database (creates test@example.com / password123)
 
 1. `git checkout -b feature/short-description` from latest `main`
 2. Write code, tests, and update relevant documentation
-3. Run `pnpm lint:fix && pnpm typecheck && pnpm test` before committing
+3. Git hooks handle checks automatically (see below), but you can also run manually:
+   `pnpm lint:fix && pnpm typecheck && pnpm test`
 4. Push the branch and create a PR with `gh pr create`
 5. After merge: `git checkout main && git pull origin main`
 
@@ -146,6 +147,10 @@ Files ending in `.server.ts` are excluded from client bundles. Use for database
 access, auth config, and session helpers.
 
 ### Database
+- **IMPORTANT: The local `sqlite.db` contains real user data. NEVER run
+  `pnpm db:seed` or any command that clears/resets the database without
+  explicit user approval.** A backup import script exists at
+  `app/db/import-data.ts` if data needs to be restored.
 - Schema defined in `app/db/schema.ts` using Drizzle's `sqliteTable`
 - Auth tables are managed by better-auth; add your own below them
 - GlobalThis singleton prevents multiple connections during HMR
@@ -361,12 +366,24 @@ These are common needs not covered by the template — add as needed:
 - **Background jobs** — No job queue or scheduler
 - **Real-time** — No WebSocket or SSE support
 
+## Git Hooks
+
+Husky + lint-staged enforce quality automatically:
+
+- **Pre-commit**: `lint-staged` runs `biome check --write` on staged files
+  (formats + lints only what you changed — fast)
+- **Pre-push**: runs `pnpm typecheck && pnpm test` (catches type errors and
+  test failures before they hit CI)
+
+Hooks are installed automatically via `pnpm install` (the `prepare` script).
+To skip hooks in an emergency: `git commit --no-verify` / `git push --no-verify`
+
 ## Code Style
 
 - No semicolons, single quotes, 2-space indent
 - 80 char line width, trailing commas
 - Biome handles all formatting and linting
-- Run `pnpm lint:fix` before committing
+- Lint-staged auto-fixes on commit; you can also run `pnpm lint:fix` manually
 - Path alias: `~/` maps to `app/`
 
 ## Testing

@@ -18,6 +18,7 @@ import { Form, Link, redirect, useRouteError } from 'react-router'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { ErrorDisplay } from '~/components/ui/error-display'
+import { FormField } from '~/components/ui/form-field'
 import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -510,19 +511,18 @@ function EventEditForm({
     >
       <input type="hidden" name="intent" value="update-event" />
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+        <FormField className="col-span-2">
           <Label htmlFor="edit-name">
             Event Name <span className="text-destructive">*</span>
           </Label>
           <Input id="edit-name" name="name" defaultValue={event.name} />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-activityId">Activity</Label>
-          <select
+          <Select
             id="edit-activityId"
             name="activityId"
             defaultValue={event.activityId || ''}
-            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
           >
             <option value="">None</option>
             {activities.map(a => (
@@ -530,24 +530,19 @@ function EventEditForm({
                 {a.name}
               </option>
             ))}
-          </select>
-        </div>
-        <div>
+          </Select>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-status">Status</Label>
-          <select
-            id="edit-status"
-            name="status"
-            defaultValue={event.status}
-            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
-          >
+          <Select id="edit-status" name="status" defaultValue={event.status}>
             {EVENT_STATUSES.map(s => (
               <option key={s} value={s}>
                 {s.charAt(0).toUpperCase() + s.slice(1)}
               </option>
             ))}
-          </select>
-        </div>
-        <div>
+          </Select>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-date">Date</Label>
           <Input
             id="edit-date"
@@ -555,8 +550,8 @@ function EventEditForm({
             type="date"
             defaultValue={event.date || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-time">Time</Label>
           <Input
             id="edit-time"
@@ -564,16 +559,16 @@ function EventEditForm({
             type="time"
             defaultValue={event.time || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-location">Location</Label>
           <Input
             id="edit-location"
             name="location"
             defaultValue={event.location || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-capacity">Capacity</Label>
           <Input
             id="edit-capacity"
@@ -583,23 +578,18 @@ function EventEditForm({
             max={1000}
             defaultValue={event.capacity?.toString() || ''}
           />
-        </div>
-        <div>
+        </FormField>
+        <FormField>
           <Label htmlFor="edit-vibe">Vibe</Label>
-          <select
-            id="edit-vibe"
-            name="vibe"
-            defaultValue={event.vibe || ''}
-            className="flex h-9 w-full rounded-md border border-input bg-card px-3 py-1 text-sm"
-          >
+          <Select id="edit-vibe" name="vibe" defaultValue={event.vibe || ''}>
             <option value="">None</option>
             {EVENT_VIBES.map(v => (
               <option key={v} value={v}>
                 {EVENT_VIBE_LABELS[v]}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormField>
       </div>
       <div className="flex items-center gap-3 pt-2">
         <Button type="submit">Save Changes</Button>

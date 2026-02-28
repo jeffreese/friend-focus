@@ -1,7 +1,10 @@
+import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, redirect, useActionData } from 'react-router'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
+import { FieldError } from '~/components/ui/field-error'
+import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
@@ -38,6 +41,14 @@ export async function action({ request }: Route.ActionArgs) {
 export default function EventNew({ loaderData }: Route.ComponentProps) {
   const { activities } = loaderData
   const lastResult = useActionData<typeof action>()
+  const [form, fields] = useForm({
+    lastResult,
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: eventSchema })
+    },
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+  })
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -47,31 +58,29 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
 
       <Form
         method="post"
+        id={form.id}
+        onSubmit={form.onSubmit}
+        noValidate
         className="space-y-5 rounded-xl border border-border-light bg-card p-6"
       >
         {/* Name */}
-        <div>
-          <Label htmlFor="name">
+        <FormField>
+          <Label htmlFor={fields.name.id}>
             Event Name <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="name"
-            name="name"
+            id={fields.name.id}
+            name={fields.name.name}
             placeholder="e.g., Poker Night"
-            error={
-              !!(
-                lastResult &&
-                'error' in lastResult &&
-                (lastResult.error as Record<string, unknown>)?.name
-              )
-            }
+            error={!!fields.name.errors}
           />
-        </div>
+          <FieldError errors={fields.name.errors} />
+        </FormField>
 
         {/* Activity */}
-        <div>
-          <Label htmlFor="activityId">Activity</Label>
-          <Select id="activityId" name="activityId">
+        <FormField>
+          <Label htmlFor={fields.activityId.id}>Activity</Label>
+          <Select id={fields.activityId.id} name={fields.activityId.name}>
             <option value="">None</option>
             {activities.map(a => (
               <option key={a.id} value={a.id}>
@@ -79,42 +88,48 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
               </option>
             ))}
           </Select>
-        </div>
+        </FormField>
 
         {/* Date and Time */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="date">Date</Label>
-            <Input id="date" name="date" type="date" />
-          </div>
-          <div>
-            <Label htmlFor="time">Time</Label>
-            <Input id="time" name="time" type="time" />
-          </div>
+          <FormField>
+            <Label htmlFor={fields.date.id}>Date</Label>
+            <Input id={fields.date.id} name={fields.date.name} type="date" />
+          </FormField>
+          <FormField>
+            <Label htmlFor={fields.time.id}>Time</Label>
+            <Input id={fields.time.id} name={fields.time.name} type="time" />
+          </FormField>
         </div>
 
         {/* Location */}
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input id="location" name="location" placeholder="e.g., My place" />
-        </div>
+        <FormField>
+          <Label htmlFor={fields.location.id}>Location</Label>
+          <Input
+            id={fields.location.id}
+            name={fields.location.name}
+            placeholder="e.g., My place"
+          />
+        </FormField>
 
         {/* Capacity and Vibe */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="capacity">Capacity</Label>
+          <FormField>
+            <Label htmlFor={fields.capacity.id}>Capacity</Label>
             <Input
-              id="capacity"
-              name="capacity"
+              id={fields.capacity.id}
+              name={fields.capacity.name}
               type="number"
               min={1}
               max={1000}
               placeholder="e.g., 8"
+              error={!!fields.capacity.errors}
             />
-          </div>
-          <div>
-            <Label htmlFor="vibe">Vibe</Label>
-            <Select id="vibe" name="vibe">
+            <FieldError errors={fields.capacity.errors} />
+          </FormField>
+          <FormField>
+            <Label htmlFor={fields.vibe.id}>Vibe</Label>
+            <Select id={fields.vibe.id} name={fields.vibe.name}>
               <option value="">None</option>
               {EVENT_VIBES.map(v => (
                 <option key={v} value={v}>
@@ -122,7 +137,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
                 </option>
               ))}
             </Select>
-          </div>
+          </FormField>
         </div>
 
         {/* Actions */}

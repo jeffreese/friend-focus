@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx app/db/seed.ts"
+    "db:seed": "tsx app/db/seed.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@conform-to/react": "^1.17.1",
@@ -54,13 +55,20 @@
     "@types/react-dom": "^19.2.3",
     "axe-core": "^4.11.1",
     "drizzle-kit": "^0.31.9",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.2.7",
     "tailwindcss": "^4.1.13",
     "tsx": "^4.21.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -1,4 +1,5 @@
 import { Plus, Users } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
 import { Avatar } from '~/components/ui/avatar'
@@ -42,6 +43,17 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
   const currentTier = searchParams.get('tier') || ''
   const currentSearch = searchParams.get('search') || ''
   const currentSort = searchParams.get('sort') || 'closeness'
+  const [searchValue, setSearchValue] = useState(currentSearch)
+
+  // Debounce search param updates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchValue !== currentSearch) {
+        updateParams({ search: searchValue })
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchValue])
 
   function updateParams(updates: Record<string, string>) {
     const params = new URLSearchParams(searchParams)
@@ -73,11 +85,12 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
       <div className="flex items-center gap-3 mb-6">
         <SearchInput
           className="flex-1"
-          defaultValue={currentSearch}
+          value={searchValue}
           placeholder="Search friends..."
-          onChange={e => updateParams({ search: e.target.value })}
+          onChange={e => setSearchValue(e.target.value)}
         />
         <Select
+          className="w-auto"
           value={currentSort}
           onChange={e => updateParams({ sort: e.target.value })}
         >
