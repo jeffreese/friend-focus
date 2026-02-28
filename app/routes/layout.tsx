@@ -1,4 +1,14 @@
-import { Home, LogIn, LogOut, UserPlus } from 'lucide-react'
+import {
+  Calendar,
+  GitFork,
+  Home,
+  LogIn,
+  LogOut,
+  Notebook,
+  Settings,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { NavLink, Outlet, useLoaderData } from 'react-router'
 import { APP_INITIALS, APP_NAME } from '~/config'
 import { getOptionalSession } from '~/lib/session.server'
@@ -65,7 +75,21 @@ export default function Layout() {
           <SidebarLink to="/" icon={Home}>
             Dashboard
           </SidebarLink>
-          {/* App navigation links will be added in a later phase */}
+          <SidebarLink to="/friends" icon={Users}>
+            Friends
+          </SidebarLink>
+          <SidebarLink to="/events" icon={Calendar}>
+            Events
+          </SidebarLink>
+          <SidebarLink to="/relationships" icon={GitFork}>
+            Relationships
+          </SidebarLink>
+          <SidebarLink to="/journal" icon={Notebook}>
+            Journal
+          </SidebarLink>
+          <SidebarLink to="/settings" icon={Settings}>
+            Settings
+          </SidebarLink>
         </nav>
 
         <div className="border-t border-white/10 p-3 space-y-1">
