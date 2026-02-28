@@ -1,3 +1,5 @@
+import { CalendarPlus } from 'lucide-react'
+import { Link } from 'react-router'
 import { ACTIVITY_RATING_LABELS } from '~/lib/schemas'
 
 const RATING_COLORS: Record<number, string> = {
@@ -8,23 +10,29 @@ const RATING_COLORS: Record<number, string> = {
   5: '#ef4444',
 }
 
+interface ActivityRating {
+  activityId: string
+  rating: number
+  activityName: string | null
+  activityIcon: string | null
+}
+
 interface ActivityInterestsSummaryProps {
-  ratings: Array<{
-    activityId: string
-    rating: number
-    activityName: string | null
-    activityIcon: string | null
-  }>
+  ratings: ActivityRating[]
+  friendId: string
+  friendName: string
 }
 
 export function ActivityInterestsSummary({
   ratings,
+  friendId,
+  friendName,
 }: ActivityInterestsSummaryProps) {
-  // Group by rating value
-  const groups = new Map<number, string[]>()
+  // Group by rating value, preserving full activity data
+  const groups = new Map<number, ActivityRating[]>()
   for (const r of ratings) {
     const existing = groups.get(r.rating) || []
-    existing.push(r.activityName || 'Unknown')
+    existing.push(r)
     groups.set(r.rating, existing)
   }
 
@@ -49,16 +57,23 @@ export function ActivityInterestsSummary({
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 pl-3.5">
-              {activities.map(name => (
+              {activities.map(a => (
                 <span
-                  key={name}
-                  className="px-2 py-0.5 text-xs rounded-full border"
+                  key={a.activityId}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border"
                   style={{
                     color,
                     borderColor: color,
                   }}
                 >
-                  {name}
+                  {a.activityName || 'Unknown'}
+                  <Link
+                    to={`/events/new?activityId=${a.activityId}&friendId=${friendId}&friendName=${encodeURIComponent(friendName)}`}
+                    title={`Plan event with ${friendName}`}
+                    className="opacity-40 hover:opacity-100 transition-opacity"
+                  >
+                    <CalendarPlus size={12} />
+                  </Link>
                 </span>
               ))}
             </div>
