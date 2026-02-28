@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1772248275710,
+      "tag": "0000_bumpy_energizer",
+      "breakpoints": true
+    }
+  ]
+}
