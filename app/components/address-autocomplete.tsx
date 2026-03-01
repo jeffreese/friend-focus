@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Input } from '~/components/ui/input'
 import { cn } from '~/lib/utils'
 
-interface AddressDetails {
+export interface AddressDetails {
   street: string | null
   city: string | null
   state: string | null
@@ -21,16 +21,22 @@ interface Suggestion {
 }
 
 interface AddressAutocompleteProps {
+  /** The form field name prefix. Defaults to 'address'. Hidden fields will be
+   * named `${namePrefix}Street`, `${namePrefix}City`, etc. */
+  namePrefix?: string
   defaultValue?: string
   defaultDetails?: AddressDetails
   placesEnabled: boolean
+  placeholder?: string
   error?: boolean
 }
 
 export function AddressAutocomplete({
+  namePrefix = 'address',
   defaultValue,
   defaultDetails,
   placesEnabled,
+  placeholder = 'e.g. 123 Main St, Denver, CO',
   error,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(defaultValue ?? '')
@@ -42,6 +48,8 @@ export function AddressAutocomplete({
   const [activeIndex, setActiveIndex] = useState(-1)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const suggestionsId = `${namePrefix}-suggestions`
 
   const fetchSuggestions = useCallback(
     (input: string) => {
@@ -150,41 +158,65 @@ export function AddressAutocomplete({
   return (
     <div ref={containerRef} className="relative">
       <Input
-        id="address"
-        name="address"
+        id={namePrefix}
+        name={namePrefix}
         value={inputValue}
         onChange={e => handleInputChange(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-        placeholder="e.g. 123 Main St, Denver, CO"
+        placeholder={placeholder}
         autoComplete="off"
         error={error}
         role="combobox"
         aria-expanded={isOpen}
         aria-autocomplete="list"
-        aria-controls="address-suggestions"
+        aria-controls={suggestionsId}
       />
 
-      <input type="hidden" name="addressStreet" value={details?.street ?? ''} />
-      <input type="hidden" name="addressCity" value={details?.city ?? ''} />
-      <input type="hidden" name="addressState" value={details?.state ?? ''} />
-      <input type="hidden" name="addressZip" value={details?.zip ?? ''} />
       <input
         type="hidden"
-        name="addressCountry"
+        name={`${namePrefix}Street`}
+        value={details?.street ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}City`}
+        value={details?.city ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}State`}
+        value={details?.state ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}Zip`}
+        value={details?.zip ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}Country`}
         value={details?.country ?? ''}
       />
-      <input type="hidden" name="addressLat" value={details?.lat ?? ''} />
-      <input type="hidden" name="addressLng" value={details?.lng ?? ''} />
       <input
         type="hidden"
-        name="addressPlaceId"
+        name={`${namePrefix}Lat`}
+        value={details?.lat ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}Lng`}
+        value={details?.lng ?? ''}
+      />
+      <input
+        type="hidden"
+        name={`${namePrefix}PlaceId`}
         value={details?.placeId ?? ''}
       />
 
       {isOpen && suggestions.length > 0 && (
         <div
-          id="address-suggestions"
+          id={suggestionsId}
           role="listbox"
           className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md max-h-60 overflow-auto"
         >

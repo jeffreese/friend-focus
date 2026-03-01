@@ -53,4 +53,55 @@ describe('event creation validation', () => {
     // The action reads friendId separately from formData.get('friendId')
     expect(formData.get('friendId')).toBe('friend-123')
   })
+
+  it('succeeds with full structured location fields', () => {
+    const formData = createFormData({
+      name: 'Dinner Party',
+      location: '1600 Amphitheatre Parkway, Mountain View, CA 94043',
+      locationStreet: '1600 Amphitheatre Parkway',
+      locationCity: 'Mountain View',
+      locationState: 'CA',
+      locationZip: '94043',
+      locationCountry: 'US',
+      locationLat: '37.4220656',
+      locationLng: '-122.0840897',
+      locationPlaceId: 'ChIJj61dQgK6j4AR4GeTYWZsKWw',
+    })
+    const submission = parseWithZod(formData, { schema: eventSchema })
+    expect(submission.status).toBe('success')
+    if (submission.status === 'success') {
+      expect(submission.value.location).toBe(
+        '1600 Amphitheatre Parkway, Mountain View, CA 94043',
+      )
+      expect(submission.value.locationStreet).toBe('1600 Amphitheatre Parkway')
+      expect(submission.value.locationCity).toBe('Mountain View')
+      expect(submission.value.locationState).toBe('CA')
+      expect(submission.value.locationZip).toBe('94043')
+      expect(submission.value.locationLat).toBe('37.4220656')
+    }
+  })
+
+  it('succeeds with location text only (no structured fields)', () => {
+    const formData = createFormData({
+      name: 'Pizza Night',
+      location: 'My place',
+    })
+    const submission = parseWithZod(formData, { schema: eventSchema })
+    expect(submission.status).toBe('success')
+    if (submission.status === 'success') {
+      expect(submission.value.location).toBe('My place')
+      expect(submission.value.locationStreet).toBeUndefined()
+    }
+  })
+
+  it('succeeds with empty location fields', () => {
+    const formData = createFormData({
+      name: 'Mystery Event',
+      location: '',
+      locationStreet: '',
+      locationCity: '',
+    })
+    const submission = parseWithZod(formData, { schema: eventSchema })
+    expect(submission.status).toBe('success')
+  })
 })

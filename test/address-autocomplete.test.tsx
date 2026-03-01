@@ -70,4 +70,51 @@ describe('AddressAutocomplete', () => {
     await render(<AddressAutocomplete placesEnabled={false} />)
     expect(screen.queryByRole('listbox')).toBeNull()
   })
+
+  it('uses custom namePrefix for field names', async () => {
+    const { container } = await render(
+      <AddressAutocomplete namePrefix="location" placesEnabled={false} />,
+    )
+    const input = screen.getByRole('combobox')
+    expect(input.getAttribute('name')).toBe('location')
+    expect(input.getAttribute('id')).toBe('location')
+
+    const hiddenInputs = container.querySelectorAll('input[type="hidden"]')
+    const names = Array.from(hiddenInputs).map(el => el.getAttribute('name'))
+    expect(names).toContain('locationStreet')
+    expect(names).toContain('locationCity')
+    expect(names).toContain('locationState')
+    expect(names).toContain('locationZip')
+    expect(names).toContain('locationCountry')
+    expect(names).toContain('locationLat')
+    expect(names).toContain('locationLng')
+    expect(names).toContain('locationPlaceId')
+  })
+
+  it('populates hidden inputs with custom namePrefix', async () => {
+    const { container } = await render(
+      <AddressAutocomplete
+        namePrefix="location"
+        defaultValue="123 Main St, Denver, CO 80202"
+        defaultDetails={{
+          street: '123 Main St',
+          city: 'Denver',
+          state: 'CO',
+          zip: '80202',
+          country: 'United States',
+          lat: '39.7392',
+          lng: '-104.9903',
+          placeId: 'ChIJ123',
+        }}
+        placesEnabled={true}
+      />,
+    )
+    const getHidden = (name: string) =>
+      container.querySelector(
+        `input[type="hidden"][name="${name}"]`,
+      ) as HTMLInputElement
+    expect(getHidden('locationStreet').value).toBe('123 Main St')
+    expect(getHidden('locationCity').value).toBe('Denver')
+    expect(getHidden('locationPlaceId').value).toBe('ChIJ123')
+  })
 })

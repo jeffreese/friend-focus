@@ -20,6 +20,10 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form, Link, redirect, useRouteError } from 'react-router'
+import {
+  AddressAutocomplete,
+  type AddressDetails,
+} from '~/components/address-autocomplete'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { ErrorDisplay } from '~/components/ui/error-display'
@@ -59,6 +63,7 @@ import {
   updateGoogleCalendarEvent,
 } from '~/lib/google.server'
 import { createNote, deleteNote, updateNote } from '~/lib/note.server'
+import { isPlacesEnabled } from '~/lib/places.server'
 import type { FriendRecommendation } from '~/lib/recommendation.server'
 import { getRecommendations } from '~/lib/recommendation.server'
 import {
@@ -93,7 +98,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     isGoogleEnabled &&
     hasGoogleScopes(userId, ['https://www.googleapis.com/auth/calendar.events'])
 
-  return { event, friends, activities, recommendations, hasCalendarAccess }
+  const placesEnabled = isPlacesEnabled()
+
+  return {
+    event,
+    friends,
+    activities,
+    recommendations,
+    hasCalendarAccess,
+    placesEnabled,
+  }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -291,8 +305,14 @@ export default function EventDetail({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const { event, friends, activities, recommendations, hasCalendarAccess } =
-    loaderData
+  const {
+    event,
+    friends,
+    activities,
+    recommendations,
+    hasCalendarAccess,
+    placesEnabled,
+  } = loaderData
   const [editing, setEditing] = useState(false)
   const [addingGuest, setAddingGuest] = useState(false)
   const [sortKey, setSortKey] = useState<GuestSortKey>('name')
@@ -387,6 +407,7 @@ export default function EventDetail({
         <EventEditForm
           event={event}
           activities={activities}
+          placesEnabled={placesEnabled}
           onCancel={() => setEditing(false)}
         />
       ) : (
@@ -750,6 +771,7 @@ function RecommendationRow({ rec }: { rec: FriendRecommendation }) {
 function EventEditForm({
   event,
   activities,
+  placesEnabled,
   onCancel,
 }: {
   event: {
@@ -759,12 +781,33 @@ function EventEditForm({
     date: string | null
     time: string | null
     location: string | null
+    locationStreet: string | null
+    locationCity: string | null
+    locationState: string | null
+    locationZip: string | null
+    locationCountry: string | null
+    locationLat: string | null
+    locationLng: string | null
+    locationPlaceId: string | null
     capacity: number | null
     vibe: string | null
   }
   activities: Array<{ id: string; name: string }>
+  placesEnabled: boolean
   onCancel: () => void
 }) {
+  const defaultDetails: AddressDetails | undefined = event.location
+    ? {
+        street: event.locationStreet,
+        city: event.locationCity,
+        state: event.locationState,
+        zip: event.locationZip,
+        country: event.locationCountry,
+        lat: event.locationLat,
+        lng: event.locationLng,
+        placeId: event.locationPlaceId,
+      }
+    : undefined
   return (
     <Form
       method="post"
@@ -822,11 +865,13 @@ function EventEditForm({
           />
         </FormField>
         <FormField>
-          <Label htmlFor="edit-location">Location</Label>
-          <Input
-            id="edit-location"
-            name="location"
-            defaultValue={event.location || ''}
+          <Label htmlFor="location">Location</Label>
+          <AddressAutocomplete
+            namePrefix="location"
+            defaultValue={event.location ?? ''}
+            defaultDetails={defaultDetails}
+            placesEnabled={placesEnabled}
+            placeholder="e.g., My place"
           />
         </FormField>
         <FormField>
