@@ -8,6 +8,7 @@ import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
+import { SubmitButton } from '~/components/ui/submit-button'
 import {
   Table,
   TableBody,
@@ -262,9 +263,9 @@ export function FriendForm({
 
       {/* Actions */}
       <div className="flex items-center gap-3 pt-2">
-        <Button type="submit">
+        <SubmitButton pendingText={isEditing ? 'Saving...' : 'Adding...'}>
           {isEditing ? 'Save Changes' : 'Add Friend'}
-        </Button>
+        </SubmitButton>
         <Button variant="outline" asChild>
           <Link to={isEditing ? `/friends/${friend.id}` : '/friends'}>
             Cancel
