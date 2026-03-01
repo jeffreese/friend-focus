@@ -34,23 +34,7 @@ export async function autocomplete(input: string): Promise<PlaceSuggestion[]> {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': env.GOOGLE_MAPS_API_KEY,
       },
-      body: JSON.stringify({
-        input: input.trim(),
-        includedPrimaryTypes: [
-          'street_address',
-          'subpremise',
-          'locality',
-          'sublocality',
-          'postal_code',
-          'administrative_area_level_1',
-          'administrative_area_level_2',
-          'country',
-          'premise',
-          'neighborhood',
-          'route',
-          'point_of_interest',
-        ],
-      }),
+      body: JSON.stringify({ input: input.trim() }),
     },
   )
 
