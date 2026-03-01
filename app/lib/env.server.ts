@@ -12,6 +12,8 @@ const envSchema = z.object({
     .string()
     .email()
     .default('Friend Focus <onboarding@resend.dev>'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
@@ -22,5 +24,14 @@ if (
 ) {
   console.warn(
     '[env] WARNING: BETTER_AUTH_SECRET is still the default value. Set a secure random secret for production.',
+  )
+}
+
+if (
+  env.NODE_ENV === 'production' &&
+  (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET)
+) {
+  console.warn(
+    '[env] WARNING: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set. Google sign-in is disabled.',
   )
 }

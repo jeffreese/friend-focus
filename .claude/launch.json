@@ -4,7 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev", "--port", "5199"],
+      "runtimeArgs": ["dev", "--port", "5199", "--host", "localhost"],
       "port": 5199,
       "autoPort": false
     },
