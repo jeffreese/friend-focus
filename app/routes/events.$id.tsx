@@ -351,45 +351,21 @@ export default function EventDetail({
         />
       ) : (
         <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold">{event.name}</h2>
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusColors[event.status] || ''}`}
-                >
-                  {event.status}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-2xl font-bold">{event.name}</h2>
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusColors[event.status] || ''}`}
+              >
+                {event.status}
+              </span>
+              {event.vibe && (
+                <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
+                  {EVENT_VIBE_LABELS[event.vibe] || event.vibe}
                 </span>
-                {event.vibe && (
-                  <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
-                    {EVENT_VIBE_LABELS[event.vibe] || event.vibe}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-5 mt-2 text-sm text-muted-foreground">
-                {event.activityName && (
-                  <span className="flex items-center gap-1">
-                    <Sparkles size={14} /> {event.activityName}
-                  </span>
-                )}
-                {event.date && (
-                  <span className="flex items-center gap-1">
-                    <CalendarDays size={14} /> {formatDate(event.date)}
-                  </span>
-                )}
-                {event.time && (
-                  <span className="flex items-center gap-1">
-                    <Clock size={14} /> {formatTime(event.time)}
-                  </span>
-                )}
-                {event.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={14} /> {event.location}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {hasCalendarAccess &&
                 event.date &&
                 (event.googleCalendarEventId ? (
@@ -430,6 +406,28 @@ export default function EventDetail({
                 Edit
               </Button>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-5 mt-3 text-sm text-muted-foreground">
+            {event.activityName && (
+              <span className="flex items-center gap-1">
+                <Sparkles size={14} /> {event.activityName}
+              </span>
+            )}
+            {event.date && (
+              <span className="flex items-center gap-1">
+                <CalendarDays size={14} /> {formatDate(event.date)}
+              </span>
+            )}
+            {event.time && (
+              <span className="flex items-center gap-1">
+                <Clock size={14} /> {formatTime(event.time)}
+              </span>
+            )}
+            {event.location && (
+              <span className="flex items-center gap-1">
+                <MapPin size={14} /> {event.location}
+              </span>
+            )}
           </div>
           {actionData &&
             'error' in actionData &&
