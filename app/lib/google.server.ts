@@ -53,7 +53,7 @@ export function hasGoogleScopes(
 
   if (!googleAccount?.scope) return false
 
-  const grantedScopes = googleAccount.scope.split(' ')
+  const grantedScopes = googleAccount.scope.split(/[\s,]+/)
   return requiredScopes.every(s => grantedScopes.includes(s))
 }
 
