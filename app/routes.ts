@@ -19,6 +19,7 @@ export default [
     route('relationships', 'routes/relationships.tsx'),
     route('journal', 'routes/journal.tsx'),
     route('settings', 'routes/settings.tsx'),
+    route('profile', 'routes/profile.tsx'),
     route('*', 'routes/not-found.tsx'),
   ]),
   layout('routes/auth-layout.tsx', [

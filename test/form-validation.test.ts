@@ -1,6 +1,11 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import { describe, expect, it } from 'vitest'
-import { loginSchema, noteSchema } from '~/lib/schemas'
+import {
+  changePasswordSchema,
+  loginSchema,
+  noteSchema,
+  updateNameSchema,
+} from '~/lib/schemas'
 
 // This file demonstrates how to test the form validation logic used in
 // route actions. It uses parseWithZod with FormData — the same pattern
@@ -80,5 +85,66 @@ describe('note action validation', () => {
     expect(submission.status).toBe('error')
     const result = submission.reply()
     expect(result.error?.content).toBeDefined()
+  })
+})
+
+describe('profile name update validation', () => {
+  it('succeeds with valid form data', () => {
+    const formData = createFormData({
+      intent: 'update-name',
+      name: 'New Name',
+    })
+    const submission = parseWithZod(formData, { schema: updateNameSchema })
+    expect(submission.status).toBe('success')
+    if (submission.status === 'success') {
+      expect(submission.value.name).toBe('New Name')
+    }
+  })
+
+  it('returns field errors for empty name', () => {
+    const formData = createFormData({ intent: 'update-name', name: '' })
+    const submission = parseWithZod(formData, { schema: updateNameSchema })
+    expect(submission.status).toBe('error')
+    const result = submission.reply()
+    expect(result.error?.name).toBeDefined()
+  })
+})
+
+describe('profile password change validation', () => {
+  it('succeeds with valid form data', () => {
+    const formData = createFormData({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'newpassword123',
+      confirmNewPassword: 'newpassword123',
+    })
+    const submission = parseWithZod(formData, { schema: changePasswordSchema })
+    expect(submission.status).toBe('success')
+  })
+
+  it('returns field errors for mismatched passwords', () => {
+    const formData = createFormData({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'newpassword123',
+      confirmNewPassword: 'different',
+    })
+    const submission = parseWithZod(formData, { schema: changePasswordSchema })
+    expect(submission.status).toBe('error')
+    const result = submission.reply()
+    expect(result.error?.confirmNewPassword).toBeDefined()
+  })
+
+  it('returns field errors for short new password', () => {
+    const formData = createFormData({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'short',
+      confirmNewPassword: 'short',
+    })
+    const submission = parseWithZod(formData, { schema: changePasswordSchema })
+    expect(submission.status).toBe('error')
+    const result = submission.reply()
+    expect(result.error?.newPassword).toBeDefined()
   })
 })

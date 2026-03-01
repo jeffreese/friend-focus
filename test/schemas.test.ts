@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   noteSchema,
   registerSchema,
   resetPasswordSchema,
+  updateNameSchema,
 } from '~/lib/schemas'
 
 describe('loginSchema', () => {
@@ -96,6 +98,74 @@ describe('resetPasswordSchema', () => {
       token: 'some-token',
       password: 'newpassword123',
       confirmPassword: 'different',
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('updateNameSchema', () => {
+  it('accepts valid name update', () => {
+    const result = updateNameSchema.safeParse({
+      intent: 'update-name',
+      name: 'New Name',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects empty name', () => {
+    const result = updateNameSchema.safeParse({
+      intent: 'update-name',
+      name: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects wrong intent', () => {
+    const result = updateNameSchema.safeParse({
+      intent: 'wrong',
+      name: 'New Name',
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
+describe('changePasswordSchema', () => {
+  it('accepts valid password change', () => {
+    const result = changePasswordSchema.safeParse({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'newpassword123',
+      confirmNewPassword: 'newpassword123',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects short new password', () => {
+    const result = changePasswordSchema.safeParse({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'short',
+      confirmNewPassword: 'short',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects mismatched passwords', () => {
+    const result = changePasswordSchema.safeParse({
+      intent: 'change-password',
+      currentPassword: 'oldpassword',
+      newPassword: 'newpassword123',
+      confirmNewPassword: 'different',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects empty current password', () => {
+    const result = changePasswordSchema.safeParse({
+      intent: 'change-password',
+      currentPassword: '',
+      newPassword: 'newpassword123',
+      confirmNewPassword: 'newpassword123',
     })
     expect(result.success).toBe(false)
   })
