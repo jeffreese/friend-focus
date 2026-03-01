@@ -34,6 +34,25 @@ export const registerSchema = z
     path: ['confirmPassword'],
   })
 
+// ─── Profile schemas ────────────────────────────────────────────────────────
+
+export const updateNameSchema = z.object({
+  intent: z.literal('update-name'),
+  name: z.string().min(1, 'Name is required').max(200, 'Name is too long'),
+})
+
+export const changePasswordSchema = z
+  .object({
+    intent: z.literal('change-password'),
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmNewPassword: z.string().min(1, 'Please confirm your new password'),
+  })
+  .refine(data => data.newPassword === data.confirmNewPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmNewPassword'],
+  })
+
 // ─── Friend schemas ──────────────────────────────────────────────────────────
 
 export const friendSchema = z.object({

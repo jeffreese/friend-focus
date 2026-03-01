@@ -2,6 +2,7 @@ import {
   Calendar,
   ChevronsLeft,
   ChevronsRight,
+  CircleUser,
   GitFork,
   Home,
   LogIn,
@@ -121,6 +122,13 @@ export default function Layout() {
                   {user.email}
                 </div>
               )}
+              <SidebarLink
+                to="/profile"
+                icon={CircleUser}
+                collapsed={collapsed}
+              >
+                Profile
+              </SidebarLink>
               <form action="/logout" method="post">
                 <button
                   type="submit"
