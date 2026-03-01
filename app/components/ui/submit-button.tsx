@@ -7,12 +7,17 @@ import { Button } from '~/components/ui/button'
 function SubmitButton({
   children,
   pendingText,
+  formIntent,
   ...props
 }: React.ComponentProps<typeof Button> & {
   pendingText?: string
+  formIntent?: string
 }) {
   const navigation = useNavigation()
-  const isSubmitting = navigation.state === 'submitting'
+  const isSubmitting = formIntent
+    ? navigation.state === 'submitting' &&
+      navigation.formData?.get('intent') === formIntent
+    : navigation.state === 'submitting'
 
   return (
     <Button type="submit" disabled={isSubmitting} {...props}>

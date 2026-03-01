@@ -1,11 +1,11 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, useActionData } from 'react-router'
-import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
 import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { auth } from '~/lib/auth.server'
 import { forgotPasswordSchema } from '~/lib/schemas'
@@ -81,9 +81,9 @@ export default function ForgotPassword() {
               <FieldError errors={fields.email.errors} />
             </FormField>
 
-            <Button type="submit" className="w-full">
+            <SubmitButton className="w-full" pendingText="Sending...">
               Send reset link
-            </Button>
+            </SubmitButton>
           </div>
         </Form>
       )}

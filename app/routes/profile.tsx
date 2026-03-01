@@ -1,7 +1,6 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, useActionData, useLoaderData } from 'react-router'
-import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
 import { FormError } from '~/components/ui/form-error'
 import { FormField } from '~/components/ui/form-field'
@@ -9,6 +8,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { PageHeader } from '~/components/ui/page-header'
 import { SectionCard } from '~/components/ui/section-card'
+import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { auth } from '~/lib/auth.server'
 import { changePasswordSchema, updateNameSchema } from '~/lib/schemas'
@@ -151,7 +151,9 @@ export default function Profile() {
                 <FieldError errors={nameFields.name.errors} />
               </FormField>
 
-              <Button type="submit">Save name</Button>
+              <SubmitButton formIntent="update-name" pendingText="Saving...">
+                Save name
+              </SubmitButton>
             </div>
           </Form>
         </SectionCard>
@@ -216,7 +218,12 @@ export default function Profile() {
                 <FieldError errors={passwordFields.confirmNewPassword.errors} />
               </FormField>
 
-              <Button type="submit">Change password</Button>
+              <SubmitButton
+                formIntent="change-password"
+                pendingText="Changing..."
+              >
+                Change password
+              </SubmitButton>
             </div>
           </Form>
         </SectionCard>

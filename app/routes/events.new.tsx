@@ -8,6 +8,7 @@ import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
+import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
 import { addInvitation, createEvent } from '~/lib/event.server'
@@ -179,7 +180,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
-          <Button type="submit">Create Event</Button>
+          <SubmitButton pendingText="Creating...">Create Event</SubmitButton>
           <Button variant="outline" asChild>
             <Link to={backTo}>Cancel</Link>
           </Button>

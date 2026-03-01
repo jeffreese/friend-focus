@@ -1,11 +1,11 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, redirect, useActionData } from 'react-router'
-import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
 import { FormField } from '~/components/ui/form-field'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { auth } from '~/lib/auth.server'
 import { registerSchema } from '~/lib/schemas'
@@ -124,9 +124,9 @@ export default function Register() {
             <FieldError errors={fields.confirmPassword.errors} />
           </FormField>
 
-          <Button type="submit" className="w-full">
+          <SubmitButton className="w-full" pendingText="Creating account...">
             Create account
-          </Button>
+          </SubmitButton>
         </div>
       </Form>
 
