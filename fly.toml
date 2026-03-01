@@ -9,7 +9,6 @@ primary_region = "ord"
 
 [env]
   NODE_ENV = "production"
-  DATABASE_URL = "/data/sqlite.db"
   PORT = "3000"
 
 [mounts]
