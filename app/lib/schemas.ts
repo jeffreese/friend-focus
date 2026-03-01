@@ -244,6 +244,15 @@ export const friendConnectionSchema = z
 
 export type FriendConnectionInput = z.infer<typeof friendConnectionSchema>
 
+export const connectionWizardSchema = z.object({
+  intent: z.enum(['set-connection', 'delete-connection']),
+  selectedFriendId: z.string().min(1),
+  otherFriendId: z.string().min(1),
+  connectionId: z.string().optional().or(z.literal('')),
+  type: z.string().max(50).optional().or(z.literal('')),
+  strength: z.coerce.number().int().min(1).max(5).optional(),
+})
+
 // ─── Gift idea schemas ───────────────────────────────────────────────────────
 
 export const giftIdeaSchema = z.object({

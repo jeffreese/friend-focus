@@ -1,5 +1,5 @@
 import { parseWithZod } from '@conform-to/zod/v4'
-import { Check, List, Network, Plus } from 'lucide-react'
+import { Check, List, Network, Plus, Wand2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Form, Link, useNavigation } from 'react-router'
 import { ConnectionGraph } from '~/components/connection-graph'
@@ -152,10 +152,18 @@ export default function Relationships({ loaderData }: Route.ComponentProps) {
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader title="Relationships">
-        <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus size={14} className="mr-1" />
-          Add Connection
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/connections/wizard">
+              <Wand2 size={14} className="mr-1" />
+              Connection Wizard
+            </Link>
+          </Button>
+          <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+            <Plus size={14} className="mr-1" />
+            Add Connection
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Add connection form */}

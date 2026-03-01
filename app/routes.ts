@@ -21,6 +21,7 @@ export default [
     route('settings', 'routes/settings.tsx'),
     route('profile', 'routes/profile.tsx'),
     route('interests/wizard', 'routes/interests.wizard.tsx'),
+    route('connections/wizard', 'routes/connections.wizard.tsx'),
     route('*', 'routes/not-found.tsx'),
   ]),
   layout('routes/auth-layout.tsx', [
