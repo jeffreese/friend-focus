@@ -43,6 +43,7 @@ import { isGoogleEnabled } from '~/lib/auth.server'
 import { buildCalendarEventPayload } from '~/lib/calendar'
 import {
   addInvitation,
+  clearGoogleCalendarEventId,
   deleteEvent,
   getEventDetail,
   removeInvitation,
@@ -52,7 +53,11 @@ import {
 } from '~/lib/event.server'
 import { formatDate } from '~/lib/format'
 import { getFriendOptions } from '~/lib/friend.server'
-import { createGoogleCalendarEvent, hasGoogleScopes } from '~/lib/google.server'
+import {
+  createGoogleCalendarEvent,
+  hasGoogleScopes,
+  updateGoogleCalendarEvent,
+} from '~/lib/google.server'
 import { createNote, deleteNote, updateNote } from '~/lib/note.server'
 import type { FriendRecommendation } from '~/lib/recommendation.server'
 import { getRecommendations } from '~/lib/recommendation.server'
@@ -103,6 +108,34 @@ export async function action({ request, params }: Route.ActionArgs) {
         const submission = parseWithZod(formData, { schema: eventSchema })
         if (submission.status !== 'success') return submission.reply()
         updateEvent(params.id, submission.value, userId)
+
+        // Sync to Google Calendar if the event was previously added
+        const updatedEvent = getEventDetail(params.id, userId)
+        if (
+          updatedEvent?.googleCalendarEventId &&
+          isGoogleEnabled &&
+          hasGoogleScopes(userId, [
+            'https://www.googleapis.com/auth/calendar.events',
+          ])
+        ) {
+          try {
+            const payload = buildCalendarEventPayload(updatedEvent)
+            await updateGoogleCalendarEvent(
+              userId,
+              updatedEvent.googleCalendarEventId,
+              payload,
+            )
+          } catch (err) {
+            if (
+              err instanceof Error &&
+              err.name === 'GoogleCalendarNotFoundError'
+            ) {
+              clearGoogleCalendarEventId(params.id, userId)
+            }
+            // Other errors silently swallowed — local update already succeeded
+          }
+        }
+
         return { ok: true }
       }
       case 'delete-event': {
