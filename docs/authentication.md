@@ -118,9 +118,9 @@ won't actually be logged in after the redirect.
 
 ## Forgot Password / Reset Password
 
-The template includes a password reset flow. In development, reset links are
-logged to the console. In production, replace the `sendResetPassword` callback
-in `app/lib/auth.server.ts` with your email provider (Resend, Postmark, etc.).
+Password reset emails are sent via [Resend](https://resend.com). In
+development (when `RESEND_API_KEY` is not set), reset links are logged to the
+console instead.
 
 ### How it works
 
@@ -134,23 +134,27 @@ in `app/lib/auth.server.ts` with your email provider (Resend, Postmark, etc.).
    `auth.api.resetPassword()` with the token
 6. On success, the user is redirected to `/login`
 
-### Wiring up email
+### Email configuration
 
-Update the callback in `app/lib/auth.server.ts`:
+Email sending is handled by `app/lib/email.server.ts` using Resend.
 
-```ts
-emailAndPassword: {
-  enabled: true,
-  async sendResetPassword({ user, url }) {
-    // Replace with your email provider
-    await sendEmail({
-      to: user.email,
-      subject: 'Reset your password',
-      html: `<a href="${url}">Reset password</a>`,
-    })
-  },
-},
-```
+**Environment variables:**
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `RESEND_API_KEY` | Production | — | Resend API key (starts with `re_`) |
+| `RESEND_FROM_EMAIL` | No | `Friend Focus <onboarding@resend.dev>` | Sender address |
+
+**Setup:**
+
+1. Create a free account at [resend.com](https://resend.com)
+2. Generate an API key in the Resend dashboard
+3. For local testing: `export RESEND_API_KEY=re_xxxxx`
+4. For Fly.io: `fly secrets set RESEND_API_KEY=re_xxxxx`
+5. (Optional) Verify a custom domain in Resend and set `RESEND_FROM_EMAIL`
+
+Without `RESEND_API_KEY`, the app falls back to logging reset links to the
+console — no email is sent, but the flow still works for development.
 
 ## Adding OAuth Providers
 
