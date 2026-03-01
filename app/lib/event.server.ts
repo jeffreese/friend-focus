@@ -64,6 +64,8 @@ export function getEventDetail(id: string, userId: string) {
       userId: event.userId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      googleCalendarEventId: event.googleCalendarEventId,
+      googleCalendarLink: event.googleCalendarLink,
     })
     .from(event)
     .leftJoin(activity, eq(event.activityId, activity.id))
@@ -178,4 +180,16 @@ export function getEventCount(userId: string, status?: string) {
     .where(conditions)
     .get()
   return result?.count ?? 0
+}
+
+export function setGoogleCalendarEventId(
+  eventId: string,
+  googleCalendarEventId: string,
+  googleCalendarLink: string,
+  userId: string,
+) {
+  db.update(event)
+    .set({ googleCalendarEventId, googleCalendarLink, updatedAt: new Date() })
+    .where(and(eq(event.id, eventId), eq(event.userId, userId)))
+    .run()
 }
