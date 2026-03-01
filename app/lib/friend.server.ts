@@ -227,7 +227,7 @@ function normalizeEmpty(data: Record<string, unknown>) {
   return Object.fromEntries(
     Object.entries(data).map(([key, value]) => [
       key,
-      value === '' ? null : value,
+      value === '' || value === undefined ? null : value,
     ]),
   )
 }
