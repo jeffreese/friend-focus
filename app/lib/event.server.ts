@@ -193,3 +193,14 @@ export function setGoogleCalendarEventId(
     .where(and(eq(event.id, eventId), eq(event.userId, userId)))
     .run()
 }
+
+export function clearGoogleCalendarEventId(eventId: string, userId: string) {
+  db.update(event)
+    .set({
+      googleCalendarEventId: null,
+      googleCalendarLink: null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(event.id, eventId), eq(event.userId, userId)))
+    .run()
+}

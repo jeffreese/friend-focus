@@ -116,6 +116,15 @@ export async function getValidGoogleAccessToken(
   return refreshGoogleAccessToken(userId)
 }
 
+export class GoogleCalendarNotFoundError extends Error {
+  constructor(googleEventId: string) {
+    super(
+      `Google Calendar event ${googleEventId} not found (likely deleted on Google's side)`,
+    )
+    this.name = 'GoogleCalendarNotFoundError'
+  }
+}
+
 export interface GoogleCalendarEventInput {
   summary: string
   description?: string
@@ -164,4 +173,44 @@ export async function createGoogleCalendarEvent(
 
   const result = (await response.json()) as { id: string; htmlLink: string }
   return { id: result.id, htmlLink: result.htmlLink }
+}
+
+/**
+ * Update an existing event on the user's primary Google Calendar.
+ * Throws GoogleCalendarNotFoundError if the event was deleted on Google's side (404/410).
+ */
+export async function updateGoogleCalendarEvent(
+  userId: string,
+  googleCalendarEventId: string,
+  calendarEvent: GoogleCalendarEventInput,
+): Promise<void> {
+  const accessToken = await getValidGoogleAccessToken(userId)
+  if (!accessToken) {
+    throw new Error(
+      'Google account not connected or token refresh failed. Try reconnecting Google on your Profile page.',
+    )
+  }
+
+  const response = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(googleCalendarEventId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(calendarEvent),
+    },
+  )
+
+  if (response.status === 404 || response.status === 410) {
+    throw new GoogleCalendarNotFoundError(googleCalendarEventId)
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(
+      `Google Calendar API error (${response.status}): ${errorBody}`,
+    )
+  }
 }
