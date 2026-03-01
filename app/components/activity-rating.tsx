@@ -1,13 +1,5 @@
 import { useState } from 'react'
-import { ACTIVITY_RATING_LABELS } from '~/lib/schemas'
-
-const RATING_COLORS: Record<number, string> = {
-  1: '#22c55e',
-  2: '#84cc16',
-  3: '#eab308',
-  4: '#f97316',
-  5: '#ef4444',
-}
+import { ACTIVITY_RATING_LABELS, RATING_COLORS } from '~/lib/schemas'
 
 interface ActivityRatingProps {
   activityId: string

@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm'
 import { db } from '~/db/index.server'
-import { activity, friendActivity } from '~/db/schema'
+import { activity, friend, friendActivity } from '~/db/schema'
 
 export function getFriendActivities(friendId: string) {
   return db
@@ -62,6 +62,19 @@ export function deleteFriendActivity(friendId: string, activityId: string) {
       ),
     )
     .run()
+}
+
+export function getAllFriendActivityRatings(userId: string) {
+  return db
+    .select({
+      friendId: friendActivity.friendId,
+      activityId: friendActivity.activityId,
+      rating: friendActivity.rating,
+    })
+    .from(friendActivity)
+    .innerJoin(friend, eq(friendActivity.friendId, friend.id))
+    .where(eq(friend.userId, userId))
+    .all()
 }
 
 export function bulkUpsertFriendActivities(

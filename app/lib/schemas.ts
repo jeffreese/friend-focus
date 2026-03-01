@@ -132,6 +132,21 @@ export const ACTIVITY_RATING_LABELS: Record<number, string> = {
   5: 'Definitely not',
 }
 
+export const RATING_COLORS: Record<number, string> = {
+  1: '#22c55e',
+  2: '#84cc16',
+  3: '#eab308',
+  4: '#f97316',
+  5: '#ef4444',
+}
+
+export const wizardRatingSchema = z.object({
+  intent: z.enum(['set-rating', 'clear-rating']),
+  friendId: z.string().min(1),
+  activityId: z.string().min(1),
+  rating: z.coerce.number().int().min(1).max(5).optional(),
+})
+
 // ─── Availability schemas ────────────────────────────────────────────────────
 
 export const availabilitySchema = z.object({
