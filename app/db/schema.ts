@@ -260,6 +260,8 @@ export const event = sqliteTable('event', {
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),
+  googleCalendarEventId: text('google_calendar_event_id'),
+  googleCalendarLink: text('google_calendar_link'),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),

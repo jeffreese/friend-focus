@@ -1,12 +1,14 @@
 import { parseWithZod } from '@conform-to/zod/v4'
 import {
   CalendarDays,
+  CalendarPlus,
   Check,
   CheckCircle2,
   ChevronDown,
   ChevronsUpDown,
   ChevronUp,
   Clock,
+  ExternalLink,
   MapPin,
   Pencil,
   Plus,
@@ -26,6 +28,7 @@ import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select } from '~/components/ui/select'
+import { SubmitButton } from '~/components/ui/submit-button'
 import {
   Table,
   TableBody,
@@ -36,16 +39,20 @@ import {
 } from '~/components/ui/table'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
+import { isGoogleEnabled } from '~/lib/auth.server'
+import { buildCalendarEventPayload } from '~/lib/calendar'
 import {
   addInvitation,
   deleteEvent,
   getEventDetail,
   removeInvitation,
+  setGoogleCalendarEventId,
   updateEvent,
   updateInvitation,
 } from '~/lib/event.server'
 import { formatDate } from '~/lib/format'
 import { getFriendOptions } from '~/lib/friend.server'
+import { createGoogleCalendarEvent, hasGoogleScopes } from '~/lib/google.server'
 import { createNote, deleteNote, updateNote } from '~/lib/note.server'
 import type { FriendRecommendation } from '~/lib/recommendation.server'
 import { getRecommendations } from '~/lib/recommendation.server'
@@ -77,7 +84,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const recommendations =
     event.status === 'planning' ? getRecommendations(params.id, userId) : []
 
-  return { event, friends, activities, recommendations }
+  const hasCalendarAccess =
+    isGoogleEnabled &&
+    hasGoogleScopes(userId, ['https://www.googleapis.com/auth/calendar.events'])
+
+  return { event, friends, activities, recommendations, hasCalendarAccess }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -160,6 +171,32 @@ export async function action({ request, params }: Route.ActionArgs) {
         if (noteId) deleteNote(noteId, userId)
         return { ok: true }
       }
+      case 'add-to-calendar': {
+        const eventDetail = getEventDetail(params.id, userId)
+        if (!eventDetail?.date) {
+          return { error: 'Event must have a date to add to calendar' }
+        }
+        if (eventDetail.googleCalendarEventId) {
+          return { error: 'Already added to Google Calendar' }
+        }
+        try {
+          const payload = buildCalendarEventPayload(eventDetail)
+          const result = await createGoogleCalendarEvent(userId, payload)
+          setGoogleCalendarEventId(
+            params.id,
+            result.id,
+            result.htmlLink,
+            userId,
+          )
+          return { ok: true }
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Failed to add to Google Calendar'
+          return { error: message }
+        }
+      }
       default:
         return { error: 'Unknown intent' }
     }
@@ -217,8 +254,12 @@ function SortIcon({
   )
 }
 
-export default function EventDetail({ loaderData }: Route.ComponentProps) {
-  const { event, friends, activities, recommendations } = loaderData
+export default function EventDetail({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { event, friends, activities, recommendations, hasCalendarAccess } =
+    loaderData
   const [editing, setEditing] = useState(false)
   const [addingGuest, setAddingGuest] = useState(false)
   const [sortKey, setSortKey] = useState<GuestSortKey>('name')
@@ -348,15 +389,55 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
                 )}
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditing(true)}
-            >
-              <Pencil size={14} className="mr-2" />
-              Edit
-            </Button>
+            <div className="flex items-center gap-2">
+              {hasCalendarAccess &&
+                event.date &&
+                (event.googleCalendarEventId ? (
+                  <a
+                    href={event.googleCalendarLink || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border bg-success/10 text-success border-success/20 hover:bg-success/20 transition-colors"
+                  >
+                    <Check size={14} />
+                    Added to Calendar
+                    <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <Form method="post" className="inline">
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value="add-to-calendar"
+                    />
+                    <SubmitButton
+                      variant="outline"
+                      size="sm"
+                      formIntent="add-to-calendar"
+                      pendingText="Adding..."
+                    >
+                      <CalendarPlus size={14} className="mr-1.5" />
+                      Add to Calendar
+                    </SubmitButton>
+                  </Form>
+                ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil size={14} className="mr-2" />
+                Edit
+              </Button>
+            </div>
           </div>
+          {actionData &&
+            'error' in actionData &&
+            typeof actionData.error === 'string' && (
+              <p className="text-sm text-destructive mt-2">
+                {actionData.error}
+              </p>
+            )}
         </div>
       )}
 
