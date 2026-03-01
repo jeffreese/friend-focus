@@ -1,4 +1,4 @@
-import { Plus, Users } from 'lucide-react'
+import { Plus, Sparkles, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
@@ -73,12 +73,20 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <PageHeader title="Friends">
-        <Button asChild>
-          <Link to="/friends/new">
-            <Plus size={16} className="mr-2" />
-            Add Friend
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/interests/wizard">
+              <Sparkles size={16} className="mr-2" />
+              Interest Wizard
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/friends/new">
+              <Plus size={16} className="mr-2" />
+              Add Friend
+            </Link>
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Search and sort */}

@@ -1,6 +1,13 @@
-import { ChevronDown, ChevronUp, Edit3, Plus, Trash2 } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronUp,
+  Edit3,
+  Plus,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
 import { useState } from 'react'
-import { Form, useNavigation } from 'react-router'
+import { Form, Link, useNavigation } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
@@ -340,13 +347,21 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             <p className="text-sm text-muted-foreground">
               Manage activities that friends can be rated on.
             </p>
-            <Button
-              size="sm"
-              onClick={() => setShowAddActivity(!showAddActivity)}
-            >
-              <Plus size={14} className="mr-1" />
-              Add Activity
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/interests/wizard">
+                  <Sparkles size={14} className="mr-1" />
+                  Interest Wizard
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowAddActivity(!showAddActivity)}
+              >
+                <Plus size={14} className="mr-1" />
+                Add Activity
+              </Button>
+            </div>
           </div>
 
           {showAddActivity && (

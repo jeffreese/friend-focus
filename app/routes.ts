@@ -20,6 +20,7 @@ export default [
     route('journal', 'routes/journal.tsx'),
     route('settings', 'routes/settings.tsx'),
     route('profile', 'routes/profile.tsx'),
+    route('interests/wizard', 'routes/interests.wizard.tsx'),
     route('*', 'routes/not-found.tsx'),
   ]),
   layout('routes/auth-layout.tsx', [
