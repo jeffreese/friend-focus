@@ -14,6 +14,7 @@ const envSchema = z.object({
     .default('Friend Focus <onboarding@resend.dev>'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_MAPS_API_KEY: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
@@ -33,5 +34,11 @@ if (
 ) {
   console.warn(
     '[env] WARNING: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set. Google sign-in is disabled.',
+  )
+}
+
+if (env.NODE_ENV === 'production' && !env.GOOGLE_MAPS_API_KEY) {
+  console.warn(
+    '[env] WARNING: GOOGLE_MAPS_API_KEY not set. Address autocomplete is disabled.',
   )
 }

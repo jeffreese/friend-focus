@@ -11,6 +11,7 @@ import {
   bulkUpsertFriendActivities,
   getFriendActivities,
 } from '~/lib/friend-activity.server'
+import { isPlacesEnabled } from '~/lib/places.server'
 import { friendSchema } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
 import type { Route } from './+types/friends.$id.edit'
@@ -36,7 +37,13 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const activities = getActivities(userId)
   const activityRatings = getFriendActivities(params.id)
 
-  return { friend, tiers, activities, activityRatings }
+  return {
+    friend,
+    tiers,
+    activities,
+    activityRatings,
+    placesEnabled: isPlacesEnabled(),
+  }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -80,7 +87,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function FriendEdit({ loaderData }: Route.ComponentProps) {
-  const { friend, tiers, activities, activityRatings } = loaderData
+  const { friend, tiers, activities, activityRatings, placesEnabled } =
+    loaderData
   const lastResult = useActionData<typeof action>()
 
   return (
@@ -95,6 +103,7 @@ export default function FriendEdit({ loaderData }: Route.ComponentProps) {
           tiers={tiers}
           activities={activities}
           activityRatings={activityRatings}
+          placesEnabled={placesEnabled}
           errors={
             lastResult && 'error' in lastResult
               ? (lastResult.error as Record<string, string[]>)

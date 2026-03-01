@@ -7,6 +7,7 @@ import { getActivities } from '~/lib/activity.server'
 import { getClosenessTiers } from '~/lib/closeness.server'
 import { createFriend } from '~/lib/friend.server'
 import { bulkUpsertFriendActivities } from '~/lib/friend-activity.server'
+import { isPlacesEnabled } from '~/lib/places.server'
 import { friendSchema } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
 import type { Route } from './+types/friends.new'
@@ -19,7 +20,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const session = await requireSession(request)
   const userId = session.user.id
   const [tiers, activities] = [getClosenessTiers(userId), getActivities(userId)]
-  return { tiers, activities }
+  return { tiers, activities, placesEnabled: isPlacesEnabled() }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -64,7 +65,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function FriendNew({ loaderData }: Route.ComponentProps) {
-  const { tiers, activities } = loaderData
+  const { tiers, activities, placesEnabled } = loaderData
   const lastResult = useActionData<typeof action>()
 
   return (
@@ -77,6 +78,7 @@ export default function FriendNew({ loaderData }: Route.ComponentProps) {
         <FriendForm
           tiers={tiers}
           activities={activities}
+          placesEnabled={placesEnabled}
           errors={
             lastResult && 'error' in lastResult
               ? (lastResult.error as Record<string, string[]>)

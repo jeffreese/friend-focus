@@ -15,6 +15,13 @@
       "when": 1772346882570,
       "tag": "0001_mushy_young_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772385911145,
+      "tag": "0002_pink_naoko",
+      "breakpoints": true
     }
   ]
 }

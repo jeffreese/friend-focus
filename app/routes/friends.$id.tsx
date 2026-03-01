@@ -260,9 +260,9 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                     <Cake size={14} /> {formatBirthday(friend.birthday)}
                   </span>
                 )}
-                {friend.location && (
+                {friend.address && (
                   <span className="flex items-center gap-1">
-                    <MapPin size={14} /> {friend.location}
+                    <MapPin size={14} /> {friend.address}
                   </span>
                 )}
                 {(friend.occupation || friend.employer) && (

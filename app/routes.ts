@@ -33,4 +33,5 @@ export default [
   route('logout', 'routes/logout.tsx'),
   route('api/auth/*', 'routes/api.auth.$.ts'),
   route('api/health', 'routes/api.health.ts'),
+  route('api/places', 'routes/api.places.ts'),
 ] satisfies RouteConfig
