@@ -78,7 +78,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     .select({
       id: friend.id,
       name: friend.name,
-      location: friend.location,
+      address: friend.address,
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
     })
@@ -543,9 +543,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <Avatar name={f.name} size="xs" />
                       <div>
                         <p className="text-sm font-medium">{f.name}</p>
-                        {f.location && (
+                        {f.address && (
                           <p className="text-xs text-muted-foreground">
-                            {f.location}
+                            {f.address}
                           </p>
                         )}
                       </div>

@@ -37,7 +37,7 @@ export function getFriends({
       phone: friend.phone,
       email: friend.email,
       birthday: friend.birthday,
-      location: friend.location,
+      address: friend.address,
       careModeActive: friend.careModeActive,
       careModeNote: friend.careModeNote,
       closenessTierId: friend.closenessTierId,
@@ -78,7 +78,15 @@ export function getFriendWithTier(id: string, userId: string) {
       email: friend.email,
       socialHandles: friend.socialHandles,
       birthday: friend.birthday,
-      location: friend.location,
+      address: friend.address,
+      addressStreet: friend.addressStreet,
+      addressCity: friend.addressCity,
+      addressState: friend.addressState,
+      addressZip: friend.addressZip,
+      addressCountry: friend.addressCountry,
+      addressLat: friend.addressLat,
+      addressLng: friend.addressLng,
+      addressPlaceId: friend.addressPlaceId,
       loveLanguage: friend.loveLanguage,
       favoriteFood: friend.favoriteFood,
       dietaryRestrictions: friend.dietaryRestrictions,
@@ -219,7 +227,7 @@ function normalizeEmpty(data: Record<string, unknown>) {
   return Object.fromEntries(
     Object.entries(data).map(([key, value]) => [
       key,
-      value === '' ? null : value,
+      value === '' || value === undefined ? null : value,
     ]),
   )
 }

@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
 import { ActivityRating } from '~/components/activity-rating'
+import { AddressAutocomplete } from '~/components/address-autocomplete'
 import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
 import { FormField } from '~/components/ui/form-field'
@@ -27,7 +28,15 @@ interface FriendFormProps {
     email: string | null
     socialHandles: string | null
     birthday: string | null
-    location: string | null
+    address: string | null
+    addressStreet: string | null
+    addressCity: string | null
+    addressState: string | null
+    addressZip: string | null
+    addressCountry: string | null
+    addressLat: string | null
+    addressLng: string | null
+    addressPlaceId: string | null
     loveLanguage: string | null
     favoriteFood: string | null
     dietaryRestrictions: string | null
@@ -46,6 +55,7 @@ interface FriendFormProps {
     rating: number
   }>
   errors?: Record<string, string[]>
+  placesEnabled: boolean
 }
 
 export function FriendForm({
@@ -54,6 +64,7 @@ export function FriendForm({
   activities,
   activityRatings,
   errors,
+  placesEnabled,
 }: FriendFormProps) {
   const isEditing = !!friend
 
@@ -126,13 +137,27 @@ export function FriendForm({
           />
         </FormField>
         <FormField>
-          <Label htmlFor="location">Location</Label>
-          <Input
-            id="location"
-            name="location"
-            defaultValue={friend?.location || ''}
-            placeholder="e.g. Denver, CO"
+          <Label htmlFor="address">Address</Label>
+          <AddressAutocomplete
+            defaultValue={friend?.address ?? ''}
+            defaultDetails={
+              friend
+                ? {
+                    street: friend.addressStreet,
+                    city: friend.addressCity,
+                    state: friend.addressState,
+                    zip: friend.addressZip,
+                    country: friend.addressCountry,
+                    lat: friend.addressLat,
+                    lng: friend.addressLng,
+                    placeId: friend.addressPlaceId,
+                  }
+                : undefined
+            }
+            placesEnabled={placesEnabled}
+            error={!!errors?.address}
           />
+          <FieldError errors={errors?.address} />
         </FormField>
       </div>
 

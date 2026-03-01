@@ -186,7 +186,7 @@ async function importData() {
         email: f.email,
         socialHandles: f.socialHandles,
         birthday: f.birthday,
-        location: f.location,
+        address: f.location,
         loveLanguage: f.loveLanguage,
         favoriteFood: f.favoriteFood,
         dietaryRestrictions: f.dietaryRestrictions,

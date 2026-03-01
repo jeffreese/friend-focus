@@ -65,6 +65,9 @@ See [Development Workflow](./docs/development-workflow.md) for full details.
 ### Environment Variables
 - Validated at startup via `app/lib/env.server.ts` (Zod schema)
 - Import `env` from `~/lib/env.server` instead of using raw `process.env`
+- `GOOGLE_MAPS_API_KEY` (optional): enables Google Places address
+  autocomplete on the friend form. Without it the field falls back to
+  plain text input.
 
 ### Server-only files
 Files ending in `.server.ts` are excluded from client bundles. Use for database

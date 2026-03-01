@@ -190,9 +190,9 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
                         </span>
                       )}
                       {f.careModeActive && <CareModeBadge />}
-                      {f.location && (
+                      {f.address && (
                         <span className="text-xs text-muted-foreground">
-                          {f.location}
+                          {f.address}
                         </span>
                       )}
                     </div>
