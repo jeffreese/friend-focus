@@ -18,7 +18,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, Link, redirect, useRouteError } from 'react-router'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
@@ -299,6 +299,13 @@ export default function EventDetail({
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [recSortKey, setRecSortKey] = useState<RecSortKey>('score')
   const [recSortDir, setRecSortDir] = useState<SortDir>('desc')
+
+  // Close edit form when update succeeds
+  useEffect(() => {
+    if (actionData && 'ok' in actionData) {
+      setEditing(false)
+    }
+  }, [actionData])
 
   function handleSort(key: GuestSortKey) {
     if (sortKey === key) {
