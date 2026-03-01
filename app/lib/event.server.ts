@@ -9,6 +9,7 @@ import {
   note,
 } from '~/db/schema'
 import type { EventInput } from './schemas'
+import { normalizeEmpty } from './utils'
 
 export function getEvents(userId: string, status?: string) {
   const conditions = status
@@ -58,6 +59,14 @@ export function getEventDetail(id: string, userId: string) {
       date: event.date,
       time: event.time,
       location: event.location,
+      locationStreet: event.locationStreet,
+      locationCity: event.locationCity,
+      locationState: event.locationState,
+      locationZip: event.locationZip,
+      locationCountry: event.locationCountry,
+      locationLat: event.locationLat,
+      locationLng: event.locationLng,
+      locationPlaceId: event.locationPlaceId,
       capacity: event.capacity,
       vibe: event.vibe,
       status: event.status,
@@ -103,15 +112,6 @@ export function getEventDetail(id: string, userId: string) {
     .all()
 
   return { ...e, invitations, notes }
-}
-
-function normalizeEmpty(data: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      value === '' ? null : value,
-    ]),
-  )
 }
 
 export function createEvent(data: EventInput, userId: string) {

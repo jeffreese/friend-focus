@@ -13,6 +13,7 @@ import {
   note,
 } from '~/db/schema'
 import type { FriendInput } from './schemas'
+import { normalizeEmpty } from './utils'
 
 export function getFriends({
   userId,
@@ -221,15 +222,6 @@ export function getFriendDetail(id: string, userId: string) {
     invitations,
     notes,
   }
-}
-
-function normalizeEmpty(data: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(data).map(([key, value]) => [
-      key,
-      value === '' || value === undefined ? null : value,
-    ]),
-  )
 }
 
 export function createFriend(data: FriendInput, userId: string) {

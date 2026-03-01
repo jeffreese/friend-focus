@@ -1,6 +1,7 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { Form, Link, redirect, useActionData } from 'react-router'
+import { AddressAutocomplete } from '~/components/address-autocomplete'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
@@ -12,6 +13,7 @@ import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
 import { addInvitation, createEvent } from '~/lib/event.server'
+import { isPlacesEnabled } from '~/lib/places.server'
 import { EVENT_VIBE_LABELS, EVENT_VIBES, eventSchema } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
 import type { Route } from './+types/events.new'
@@ -38,7 +40,16 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
   }
 
-  return { activities, activityId, friendId, friendName, defaultName }
+  const placesEnabled = isPlacesEnabled()
+
+  return {
+    activities,
+    activityId,
+    friendId,
+    friendName,
+    defaultName,
+    placesEnabled,
+  }
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -62,8 +73,14 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function EventNew({ loaderData }: Route.ComponentProps) {
-  const { activities, activityId, friendId, friendName, defaultName } =
-    loaderData
+  const {
+    activities,
+    activityId,
+    friendId,
+    friendName,
+    defaultName,
+    placesEnabled,
+  } = loaderData
   const lastResult = useActionData<typeof action>()
   const [form, fields] = useForm({
     lastResult,
@@ -142,12 +159,14 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
 
         {/* Location */}
         <FormField>
-          <Label htmlFor={fields.location.id}>Location</Label>
-          <Input
-            id={fields.location.id}
-            name={fields.location.name}
+          <Label htmlFor="location">Location</Label>
+          <AddressAutocomplete
+            namePrefix="location"
+            placesEnabled={placesEnabled}
             placeholder="e.g., My place"
+            error={!!fields.location.errors}
           />
+          <FieldError errors={fields.location.errors} />
         </FormField>
 
         {/* Capacity and Vibe */}
