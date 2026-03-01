@@ -112,6 +112,13 @@ access, auth config, and session helpers.
   Tailwind utility) — used for sidebar active state
 - Use `cn()` from `~/lib/utils` to merge class names
 - Add new shadcn components: `pnpm dlx shadcn@latest add <component>`
+- **IMPORTANT: Always use existing components from `app/components/ui/` instead
+  of writing raw HTML/Tailwind for the same purpose.** Before building any UI,
+  check what components already exist (e.g., `PageHeader`, `SectionCard`,
+  `FormField`, `FieldError`, `FormError`, `EmptyState`, `StatusBadge`,
+  `SubmitButton`, `BackLink`, `DataTable`, etc.). If a reusable pattern
+  emerges that doesn't have a component yet, create one in `app/components/ui/`.
+  The goal is DRY, consistent UI that's easy to theme and modify globally.
 
 ### Route Conventions
 - Loaders fetch data, actions handle mutations
