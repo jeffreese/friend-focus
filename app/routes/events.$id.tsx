@@ -360,68 +360,8 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
         </div>
       )}
 
-      {/* Recommendations — only while planning */}
-      {event.status === 'planning' && recommendations.length > 0 && (
-        <div className="rounded-xl border border-border-light bg-card mb-6">
-          <div className="p-5 border-b border-border-light flex items-center justify-between">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Sparkles size={18} className="text-primary" />
-              Guest List Recommendations
-            </h3>
-            <Link
-              to={`/events/${event.id}`}
-              reloadDocument
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border hover:bg-accent transition-colors text-muted-foreground"
-            >
-              <RefreshCw size={12} />
-              Recalculate
-            </Link>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10" />
-                {(
-                  [
-                    { key: 'name', label: 'Name', center: false },
-                    { key: 'score', label: 'Score', center: true },
-                    { key: 'interest', label: 'Interest', center: true },
-                    { key: 'tier', label: 'Tier', center: true },
-                    { key: 'social', label: 'Social', center: true },
-                  ] as const
-                ).map(col => (
-                  <TableHead
-                    key={col.key}
-                    className={col.center ? 'text-center' : ''}
-                  >
-                    <button
-                      type="button"
-                      className={`flex items-center hover:text-foreground transition-colors ${col.center ? 'mx-auto' : ''}`}
-                      onClick={() => handleRecSort(col.key)}
-                    >
-                      {col.label}
-                      <SortIcon
-                        column={col.key}
-                        sortKey={recSortKey}
-                        sortDir={recSortDir}
-                      />
-                    </button>
-                  </TableHead>
-                ))}
-                <TableHead>Why</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRecommendations.map(rec => (
-                <RecommendationRow key={rec.friendId} rec={rec} />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
       {/* Guest list */}
-      <div className="rounded-xl border border-border-light bg-card">
+      <div className="rounded-xl border border-border-light bg-card mb-6">
         <div className="p-5 border-b border-border-light flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2">
             <Users size={18} className="text-primary" />
@@ -504,6 +444,66 @@ export default function EventDetail({ loaderData }: Route.ComponentProps) {
           </Table>
         )}
       </div>
+
+      {/* Recommendations — only while planning */}
+      {event.status === 'planning' && recommendations.length > 0 && (
+        <div className="rounded-xl border border-border-light bg-card">
+          <div className="p-5 border-b border-border-light flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" />
+              Guest List Recommendations
+            </h3>
+            <Link
+              to={`/events/${event.id}`}
+              reloadDocument
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border hover:bg-accent transition-colors text-muted-foreground"
+            >
+              <RefreshCw size={12} />
+              Recalculate
+            </Link>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10" />
+                {(
+                  [
+                    { key: 'name', label: 'Name', center: false },
+                    { key: 'score', label: 'Score', center: true },
+                    { key: 'interest', label: 'Interest', center: true },
+                    { key: 'tier', label: 'Tier', center: true },
+                    { key: 'social', label: 'Social', center: true },
+                  ] as const
+                ).map(col => (
+                  <TableHead
+                    key={col.key}
+                    className={col.center ? 'text-center' : ''}
+                  >
+                    <button
+                      type="button"
+                      className={`flex items-center hover:text-foreground transition-colors ${col.center ? 'mx-auto' : ''}`}
+                      onClick={() => handleRecSort(col.key)}
+                    >
+                      {col.label}
+                      <SortIcon
+                        column={col.key}
+                        sortKey={recSortKey}
+                        sortDir={recSortDir}
+                      />
+                    </button>
+                  </TableHead>
+                ))}
+                <TableHead>Why</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedRecommendations.map(rec => (
+                <RecommendationRow key={rec.friendId} rec={rec} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Notes */}
       <div className="mt-6 rounded-xl border border-border-light bg-card p-5">
