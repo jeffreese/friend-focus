@@ -39,7 +39,11 @@ export async function loader({ request }: Route.LoaderArgs) {
   const userId = session.user.id
   const tiers = getClosenessTiers(userId)
   const activities = getActivities(userId)
-  return { tiers, activities }
+
+  return {
+    tiers,
+    activities,
+  }
 }
 
 function moveItem<T>(arr: T[], fromIndex: number, direction: -1 | 1): T[] {

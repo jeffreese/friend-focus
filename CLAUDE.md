@@ -90,6 +90,11 @@ access, auth config, and session helpers.
 - Server: `requireSession(request)` redirects to `/login` if unauthenticated
 - Server: `getOptionalSession(request)` returns session or null
 - Client: `signIn.email()`, `signUp.email()`, `signOut()` from `auth.client.ts`
+- Google OAuth: configured via `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+  env vars (optional — app works without them)
+- Social sign-in: `authClient.signIn.social({ provider: 'google' })`
+- Account linking: `authClient.linkSocial({ provider: 'google' })`
+- Google token helper: `app/lib/google.server.ts` for Calendar/Contacts API access
 
 ### Forms (Conform + Zod)
 - Define schemas in `app/lib/schemas.ts`

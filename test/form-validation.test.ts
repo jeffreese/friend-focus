@@ -4,6 +4,7 @@ import {
   changePasswordSchema,
   loginSchema,
   noteSchema,
+  setPasswordSchema,
   updateNameSchema,
 } from '~/lib/schemas'
 
@@ -143,6 +144,42 @@ describe('profile password change validation', () => {
       confirmNewPassword: 'short',
     })
     const submission = parseWithZod(formData, { schema: changePasswordSchema })
+    expect(submission.status).toBe('error')
+    const result = submission.reply()
+    expect(result.error?.newPassword).toBeDefined()
+  })
+})
+
+describe('set password validation (Google-only users)', () => {
+  it('succeeds with valid form data', () => {
+    const formData = createFormData({
+      intent: 'set-password',
+      newPassword: 'password123',
+      confirmNewPassword: 'password123',
+    })
+    const submission = parseWithZod(formData, { schema: setPasswordSchema })
+    expect(submission.status).toBe('success')
+  })
+
+  it('returns field errors for mismatched passwords', () => {
+    const formData = createFormData({
+      intent: 'set-password',
+      newPassword: 'password123',
+      confirmNewPassword: 'different',
+    })
+    const submission = parseWithZod(formData, { schema: setPasswordSchema })
+    expect(submission.status).toBe('error')
+    const result = submission.reply()
+    expect(result.error?.confirmNewPassword).toBeDefined()
+  })
+
+  it('returns field errors for short password', () => {
+    const formData = createFormData({
+      intent: 'set-password',
+      newPassword: 'short',
+      confirmNewPassword: 'short',
+    })
+    const submission = parseWithZod(formData, { schema: setPasswordSchema })
     expect(submission.status).toBe('error')
     const result = submission.reply()
     expect(result.error?.newPassword).toBeDefined()

@@ -49,6 +49,8 @@ Sensitive environment variables are stored as Fly.io secrets (not in
 ```bash
 fly secrets set BETTER_AUTH_SECRET=$(openssl rand -base64 32)
 fly secrets set BETTER_AUTH_URL=https://friend-focus.fly.dev
+fly secrets set GOOGLE_CLIENT_ID=your-google-client-id
+fly secrets set GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 Non-sensitive env vars (`NODE_ENV`, `DATABASE_URL`, `PORT`) are in the `[env]`
@@ -117,8 +119,11 @@ will fail to start with a clear error message.
 | `BETTER_AUTH_SECRET` | Yes | — | Secret key for signing session cookies |
 | `BETTER_AUTH_URL` | No | `http://localhost:5173` | Public URL of the application |
 | `NODE_ENV` | No | `development` | `development`, `production`, or `test` |
+| `GOOGLE_CLIENT_ID` | No | — | Google OAuth client ID (enables Google sign-in) |
+| `GOOGLE_CLIENT_SECRET` | No | — | Google OAuth client secret |
 
 A warning is logged if `BETTER_AUTH_SECRET` is still the default value in
+production. A warning is also logged if Google OAuth credentials are missing in
 production.
 
 ## Production Build
