@@ -7,6 +7,11 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z
+    .string()
+    .email()
+    .default('Friend Focus <onboarding@resend.dev>'),
 })
 
 export const env = envSchema.parse(process.env)
