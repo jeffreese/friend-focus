@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, like } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNull, like, or } from 'drizzle-orm'
 import { db } from '~/db/index.server'
 import {
   activity,
@@ -20,15 +20,22 @@ export function getFriends({
   search,
   tierId,
   sortBy = 'name',
+  excludeHidden = false,
 }: {
   userId: string
   search?: string
   tierId?: string
   sortBy?: 'name' | 'closeness' | 'createdAt'
+  excludeHidden?: boolean
 }) {
   const conditions = [eq(friend.userId, userId)]
   if (search) conditions.push(like(friend.name, `%${search}%`))
   if (tierId) conditions.push(eq(friend.closenessTierId, tierId))
+  if (excludeHidden) {
+    conditions.push(
+      or(eq(closenessTier.hidden, false), isNull(friend.closenessTierId))!,
+    )
+  }
 
   const query = db
     .select({
@@ -45,6 +52,7 @@ export function getFriends({
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
       tierSortOrder: closenessTier.sortOrder,
+      tierHidden: closenessTier.hidden,
       googleContactResourceName: friend.googleContactResourceName,
       userId: friend.userId,
       createdAt: friend.createdAt,

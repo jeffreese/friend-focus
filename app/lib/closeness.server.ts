@@ -9,6 +9,7 @@ export function getClosenessTiers(userId: string) {
       label: closenessTier.label,
       sortOrder: closenessTier.sortOrder,
       color: closenessTier.color,
+      hidden: closenessTier.hidden,
       userId: closenessTier.userId,
       createdAt: closenessTier.createdAt,
       friendCount: count(friend.id),
@@ -74,6 +75,19 @@ export function updateClosenessTier(
 
 export function deleteClosenessTier(id: string, userId: string) {
   db.delete(closenessTier)
+    .where(and(eq(closenessTier.id, id), eq(closenessTier.userId, userId)))
+    .run()
+}
+
+export function toggleTierHidden(id: string, userId: string) {
+  const tier = db
+    .select({ hidden: closenessTier.hidden })
+    .from(closenessTier)
+    .where(and(eq(closenessTier.id, id), eq(closenessTier.userId, userId)))
+    .get()
+  if (!tier) return
+  db.update(closenessTier)
+    .set({ hidden: !tier.hidden })
     .where(and(eq(closenessTier.id, id), eq(closenessTier.userId, userId)))
     .run()
 }

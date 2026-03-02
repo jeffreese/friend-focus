@@ -6,6 +6,7 @@ export interface FriendRecommendation {
   tierLabel: string | null
   tierColor: string | null
   tierSortOrder: number | null
+  tierHidden: boolean
   score: number
   interest: { rating: string; score: number }
   closeness: { tier: string | null; score: number }

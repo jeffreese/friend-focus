@@ -1,0 +1,1 @@
+ALTER TABLE `closeness_tier` ADD `hidden` integer DEFAULT false NOT NULL;

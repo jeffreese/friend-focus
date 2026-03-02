@@ -2,6 +2,8 @@ import {
   ChevronDown,
   ChevronUp,
   Edit3,
+  Eye,
+  EyeOff,
   Plus,
   Sparkles,
   Trash2,
@@ -25,6 +27,7 @@ import {
   deleteClosenessTier,
   getClosenessTiers,
   reorderClosenessTiers,
+  toggleTierHidden,
   updateClosenessTier,
 } from '~/lib/closeness.server'
 import { requireSession } from '~/lib/session.server'
@@ -88,6 +91,12 @@ export async function action({ request }: Route.ActionArgs) {
       (formData.get('orderedIds') as string) || '[]',
     )
     if (Array.isArray(orderedIds)) reorderClosenessTiers(orderedIds, userId)
+    return { ok: true }
+  }
+
+  if (intent === 'toggle-tier-hidden') {
+    const id = formData.get('tierId') as string
+    if (id) toggleTierHidden(id, userId)
     return { ok: true }
   }
 
@@ -243,7 +252,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               return (
                 <div
                   key={tier.id}
-                  className="flex items-center gap-2 rounded-lg border border-border-light bg-card p-3"
+                  className={`flex items-center gap-2 rounded-lg border border-border-light bg-card p-3${tier.hidden ? ' opacity-60' : ''}`}
                 >
                   {/* Reorder buttons */}
                   <div className="flex flex-col">
@@ -313,6 +322,30 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                         {tier.friendCount} friend
                         {tier.friendCount !== 1 ? 's' : ''}
                       </span>
+                      <Form method="post" className="flex">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="toggle-tier-hidden"
+                        />
+                        <input type="hidden" name="tierId" value={tier.id} />
+                        <button
+                          type="submit"
+                          className="p-1 text-muted-foreground hover:text-foreground rounded"
+                          title={
+                            tier.hidden
+                              ? 'Hidden from friends list and recommendations'
+                              : 'Visible in friends list and recommendations'
+                          }
+                          disabled={isSubmitting}
+                        >
+                          {tier.hidden ? (
+                            <EyeOff size={13} />
+                          ) : (
+                            <Eye size={13} />
+                          )}
+                        </button>
+                      </Form>
                       <button
                         type="button"
                         onClick={() => setEditingTierId(tier.id)}

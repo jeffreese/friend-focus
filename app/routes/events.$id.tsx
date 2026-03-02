@@ -9,6 +9,7 @@ import {
   ChevronUp,
   Clock,
   ExternalLink,
+  EyeOff,
   MapPin,
   Pencil,
   Plus,
@@ -320,6 +321,8 @@ export default function EventDetail({
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [recSortKey, setRecSortKey] = useState<RecSortKey>('score')
   const [recSortDir, setRecSortDir] = useState<SortDir>('desc')
+  const [showHiddenRecs, setShowHiddenRecs] = useState(false)
+  const hasHiddenRecs = recommendations.some(r => r.tierHidden)
 
   // Close edit form when update succeeds
   useEffect(() => {
@@ -346,7 +349,10 @@ export default function EventDetail({
     }
   }
 
-  const sortedRecommendations = [...recommendations].sort((a, b) => {
+  const filteredRecommendations = showHiddenRecs
+    ? recommendations
+    : recommendations.filter(r => !r.tierHidden)
+  const sortedRecommendations = [...filteredRecommendations].sort((a, b) => {
     let cmp = 0
     switch (recSortKey) {
       case 'name':
@@ -608,14 +614,33 @@ export default function EventDetail({
               <Sparkles size={18} className="text-primary" />
               Guest List Recommendations
             </h3>
-            <Link
-              to={`/events/${event.id}`}
-              reloadDocument
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border hover:bg-accent transition-colors text-muted-foreground"
-            >
-              <RefreshCw size={12} />
-              Recalculate
-            </Link>
+            <div className="flex items-center gap-2">
+              {hasHiddenRecs && (
+                <button
+                  type="button"
+                  onClick={() => setShowHiddenRecs(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                    showHiddenRecs
+                      ? 'bg-muted text-foreground'
+                      : 'text-muted-foreground hover:bg-accent'
+                  }`}
+                  title={
+                    showHiddenRecs ? 'Hide hidden tiers' : 'Show hidden tiers'
+                  }
+                >
+                  <EyeOff size={12} />
+                  {showHiddenRecs ? 'Hiding shown' : 'Show hidden'}
+                </button>
+              )}
+              <Link
+                to={`/events/${event.id}`}
+                reloadDocument
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border hover:bg-accent transition-colors text-muted-foreground"
+              >
+                <RefreshCw size={12} />
+                Recalculate
+              </Link>
+            </div>
           </div>
           <ResponsiveTable
             table={
