@@ -1,4 +1,5 @@
 import { ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { authClient } from '~/lib/auth.client'
 
 interface GoogleScopeUpgradeProps {
   open: boolean
@@ -20,8 +22,23 @@ export function GoogleScopeUpgrade({
   onCancel,
   callbackURL = '/profile',
 }: GoogleScopeUpgradeProps) {
-  function handleUpgrade() {
-    window.location.href = `/api/google-scope-upgrade?callbackURL=${encodeURIComponent(callbackURL)}`
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleUpgrade() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      await authClient.linkSocial({
+        provider: 'google',
+        callbackURL,
+        scopes: ['https://www.googleapis.com/auth/contacts'],
+      })
+    } catch {
+      setError('Failed to start permission upgrade. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -46,15 +63,19 @@ export function GoogleScopeUpgrade({
           <p className="text-sm text-muted-foreground">
             You&apos;ll be redirected to Google to approve this change.
           </p>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} disabled={loading}>
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={handleUpgrade}>Upgrade Permission</Button>
+          <Button onClick={handleUpgrade} disabled={loading}>
+            {loading ? 'Redirecting...' : 'Upgrade Permission'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
