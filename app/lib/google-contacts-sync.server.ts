@@ -13,6 +13,14 @@ import {
 } from '~/lib/google-contacts.server'
 import { deletePhoto, savePhoto } from '~/lib/photos.server'
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Google's formattedValue uses newlines between address parts — flatten to a single line. */
+function flattenAddress(value: string | undefined | null): string | null {
+  if (!value) return null
+  return value.replace(/\n+/g, ', ').trim() || null
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface CachedContact {
@@ -158,7 +166,7 @@ export async function syncGoogleContactsToCache(
 function upsertCachedContact(userId: string, contact: GoogleContact) {
   const primaryEmail = contact.emails[0]?.value || null
   const primaryPhone = contact.phoneNumbers[0]?.value || null
-  const primaryAddress = contact.addresses[0]?.formattedValue || null
+  const primaryAddress = flattenAddress(contact.addresses[0]?.formattedValue)
   const primaryPhoto = contact.photos.find(p => !p.default)?.url || null
 
   const existing = db
@@ -524,11 +532,11 @@ const SYNCABLE_FIELDS: Array<{
     field: 'address',
     label: 'Address',
     getFriendValue: f => f.address,
-    getGoogleValue: c => c.addresses[0]?.formattedValue || null,
+    getGoogleValue: c => flattenAddress(c.addresses[0]?.formattedValue),
     getGoogleMultiValues: c =>
       c.addresses
         .filter(a => a.formattedValue)
-        .map(a => ({ value: a.formattedValue!, type: a.type })),
+        .map(a => ({ value: flattenAddress(a.formattedValue)!, type: a.type })),
   },
   {
     field: 'birthday',
