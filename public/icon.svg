@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <!-- Focus rings -->
+  <circle cx="256" cy="268" r="180" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="20"/>
+  <circle cx="256" cy="268" r="135" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="18"/>
+  <circle cx="256" cy="268" r="90" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="16"/>
+  <!-- Person left -->
+  <circle cx="222" cy="237" r="30" fill="white"/>
+  <path d="M222 275 C198 275, 180 294, 180 318 L180 330 C180 336, 185 341, 191 341 L253 341 C259 341, 264 336, 264 330 L264 318 C264 294, 246 275, 222 275Z" fill="white"/>
+  <!-- Person right -->
+  <circle cx="290" cy="237" r="30" fill="white"/>
+  <path d="M290 275 C266 275, 248 294, 248 318 L248 330 C248 336, 253 341, 259 341 L321 341 C327 341, 332 336, 332 330 L332 318 C332 294, 314 275, 290 275Z" fill="white"/>
+</svg>
