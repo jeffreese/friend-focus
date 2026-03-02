@@ -354,6 +354,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
   async function handleLink(resourceName: string) {
     setShowLinkDialog(false)
     try {
+      // Step 1: Link the friend to the Google contact
       await fetch('/api/google-contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -363,9 +364,62 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
           resourceName,
         }),
       })
-      window.location.reload()
+
+      // Step 2: Immediately sync to detect field differences
+      const syncRes = await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'sync-friend',
+          friendId: friend.id,
+          forceCompare: true,
+        }),
+      })
+      const syncResult = await syncRes.json()
+
+      if (
+        syncResult.status === 'changes-detected' &&
+        syncResult.diffs?.length > 0
+      ) {
+        const diffs = syncResult.diffs as FieldDiff[]
+
+        // Check if all diffs are non-conflicting (one side empty, other has data)
+        const allNonConflicting = diffs.every(
+          d => (!d.appValue && d.googleValue) || (d.appValue && !d.googleValue),
+        )
+
+        if (allNonConflicting) {
+          // Auto-apply: fill empty fields from whichever side has data
+          const autoResolutions = diffs.map(d => ({
+            field: d.field,
+            action: (d.appValue ? 'keep-app' : 'use-google') as
+              | 'use-google'
+              | 'keep-app',
+            value: d.appValue || d.googleValue || undefined,
+          }))
+          await fetch('/api/google-contacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              intent: 'resolve-diffs',
+              friendId: friend.id,
+              resolutions: autoResolutions,
+            }),
+          })
+          toast.success('Linked to Google contact — all data is in sync.')
+          window.location.reload()
+        } else {
+          // Has real conflicts — show the diff dialog for user review
+          setPendingDiffs(diffs)
+          setShowDiffDialog(true)
+        }
+      } else {
+        toast.success('Linked to Google contact — all data is in sync.')
+        window.location.reload()
+      }
     } catch {
-      // Silently fail
+      // If something fails, still reload to show current state
+      window.location.reload()
     }
   }
 
