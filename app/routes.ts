@@ -34,7 +34,6 @@ export default [
   route('api/auth/*', 'routes/api.auth.$.ts'),
   route('api/health', 'routes/api.health.ts'),
   route('api/google-contacts', 'routes/api.google-contacts.ts'),
-  route('api/google-scope-upgrade', 'routes/api.google-scope-upgrade.ts'),
   route('api/photos/:filename', 'routes/api.photos.$filename.ts'),
   route('api/places', 'routes/api.places.ts'),
 ] satisfies RouteConfig
