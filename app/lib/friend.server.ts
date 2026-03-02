@@ -45,6 +45,7 @@ export function getFriends({
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
       tierSortOrder: closenessTier.sortOrder,
+      googleContactResourceName: friend.googleContactResourceName,
       userId: friend.userId,
       createdAt: friend.createdAt,
     })

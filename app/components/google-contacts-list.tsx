@@ -12,15 +12,27 @@ import type {
   FieldDiff,
 } from '~/lib/google-contacts-sync.server'
 import { ContactImportDialog } from './contact-import-dialog'
+import { FriendLinkDialog } from './friend-link-dialog'
+
+export interface FriendForLinking {
+  id: string
+  name: string
+  photo: string | null
+  tierLabel: string | null
+  tierColor: string | null
+  googleContactResourceName: string | null
+}
 
 interface GoogleContactsListProps {
   contacts: CachedContactWithStatus[]
+  friends: FriendForLinking[]
   lastBulkSyncAt: string | null
   hasGoogleWrite?: boolean
 }
 
 export function GoogleContactsList({
   contacts,
+  friends,
   lastBulkSyncAt,
   hasGoogleWrite,
 }: GoogleContactsListProps) {
@@ -37,6 +49,10 @@ export function GoogleContactsList({
     useState<CachedContactWithStatus | null>(null)
   const [linkDiffs, setLinkDiffs] = useState<FieldDiff[] | null>(null)
 
+  // Friend link dialog state (for manually linking a contact to a friend)
+  const [friendLinkContact, setFriendLinkContact] =
+    useState<CachedContactWithStatus | null>(null)
+
   const phoneCount = contacts.filter(c => c.phone).length
   const displayContacts = contacts
     .filter(c => showAll || c.phone)
@@ -50,13 +66,20 @@ export function GoogleContactsList({
       )
     })
 
-  // Split into suggested matches and other contacts
+  // Split into suggested matches, possible matches, and other contacts
   const suggestedMatches = displayContacts.filter(
     c =>
       !c.linkedFriendId && c.suggestedFriendId && c.suggestedConfidence >= 0.5,
   )
+  const possibleMatches = displayContacts.filter(
+    c =>
+      !c.linkedFriendId &&
+      c.suggestedFriendId &&
+      c.suggestedConfidence >= 0.3 &&
+      c.suggestedConfidence < 0.5,
+  )
   const otherContacts = displayContacts.filter(
-    c => !suggestedMatches.includes(c),
+    c => !suggestedMatches.includes(c) && !possibleMatches.includes(c),
   )
 
   async function handleBulkSync() {
@@ -244,6 +267,83 @@ export function GoogleContactsList({
     }
   }
 
+  async function handleFriendLink(friendId: string) {
+    if (!friendLinkContact) return
+    const contact = friendLinkContact
+    setFriendLinkContact(null)
+    setActionInProgress(contact.resourceName)
+    setLinkingContact(contact)
+
+    try {
+      // Step 1: Link the friend to the Google contact
+      await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'link',
+          resourceName: contact.resourceName,
+          friendId,
+        }),
+      })
+
+      // Step 2: Immediately sync to detect field differences
+      const syncRes = await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'sync-friend',
+          friendId,
+          forceCompare: true,
+        }),
+      })
+      const syncResult = await syncRes.json()
+
+      if (
+        syncResult.status === 'changes-detected' &&
+        syncResult.diffs?.length > 0
+      ) {
+        const diffs = syncResult.diffs as FieldDiff[]
+        const allNonConflicting = diffs.every(
+          d => (!d.appValue && d.googleValue) || (d.appValue && !d.googleValue),
+        )
+
+        if (allNonConflicting) {
+          const autoResolutions = diffs.map(d => ({
+            field: d.field,
+            action: (d.appValue ? 'keep-app' : 'use-google') as
+              | 'use-google'
+              | 'keep-app',
+            value: d.appValue || d.googleValue || undefined,
+          }))
+          await handleLinkDiffApply(autoResolutions, friendId)
+          const friendName =
+            friends.find(f => f.id === friendId)?.name || 'friend'
+          toast.success(`Linked to ${friendName} — all data is in sync.`)
+        } else {
+          // Override the linking contact's friend info for the diff dialog
+          setLinkingContact({
+            ...contact,
+            suggestedFriendId: friendId,
+            suggestedFriendName:
+              friends.find(f => f.id === friendId)?.name || 'Friend',
+          } as CachedContactWithStatus)
+          setLinkDiffs(diffs)
+        }
+      } else {
+        const friendName =
+          friends.find(f => f.id === friendId)?.name || 'friend'
+        toast.success(`Linked to ${friendName} — all data is in sync.`)
+        setLinkingContact(null)
+        revalidator.revalidate()
+      }
+    } catch {
+      setLinkingContact(null)
+      revalidator.revalidate()
+    } finally {
+      setActionInProgress(null)
+    }
+  }
+
   return (
     <div>
       {/* Header controls */}
@@ -388,10 +488,83 @@ export function GoogleContactsList({
             </div>
           )}
 
-          {/* Section 2: All Contacts */}
+          {/* Section 2: Possible Matches */}
+          {possibleMatches.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  Possible Matches
+                </h3>
+                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                  {possibleMatches.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {possibleMatches.map(contact => (
+                  <div
+                    key={contact.resourceName}
+                    className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3"
+                  >
+                    <Avatar name={contact.displayName || '?'} size="sm" />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">
+                          {contact.displayName || 'Unnamed'}
+                        </p>
+                        <ArrowRight
+                          size={12}
+                          className="text-muted-foreground shrink-0"
+                        />
+                        <p className="text-sm text-muted-foreground truncate">
+                          {contact.suggestedFriendName}?
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          {contact.email && (
+                            <span className="truncate">{contact.email}</span>
+                          )}
+                          {contact.phone && <span>{contact.phone}</span>}
+                        </div>
+                        {contact.suggestedReasons.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            {contact.suggestedReasons.map(reason => (
+                              <span
+                                key={reason}
+                                className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded"
+                              >
+                                {reason}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={actionInProgress === contact.resourceName}
+                        onClick={() => handleLinkAndReview(contact)}
+                      >
+                        <Link2 size={12} className="mr-1" />
+                        {actionInProgress === contact.resourceName
+                          ? 'Linking...'
+                          : 'Link & Review'}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 3: All Contacts */}
           {otherContacts.length > 0 && (
             <div>
-              {suggestedMatches.length > 0 && (
+              {(suggestedMatches.length > 0 || possibleMatches.length > 0) && (
                 <h3 className="text-sm font-semibold mb-3">All Contacts</h3>
               )}
               <div className="space-y-2">
@@ -424,15 +597,26 @@ export function GoogleContactsList({
                           Linked to {contact.linkedFriendName}
                         </span>
                       ) : (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          disabled={actionInProgress === contact.resourceName}
-                          onClick={() => checkMultiValueAndImport(contact)}
-                        >
-                          <UserPlus size={12} className="mr-1" />
-                          Import
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            disabled={actionInProgress === contact.resourceName}
+                            onClick={() => setFriendLinkContact(contact)}
+                          >
+                            <Link2 size={12} className="mr-1" />
+                            Link
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            disabled={actionInProgress === contact.resourceName}
+                            onClick={() => checkMultiValueAndImport(contact)}
+                          >
+                            <UserPlus size={12} className="mr-1" />
+                            Import
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -452,6 +636,17 @@ export function GoogleContactsList({
             handleImport(importContact, selectedFields)
           }
           onCancel={() => setImportContact(null)}
+        />
+      )}
+
+      {/* Friend link dialog (manual link from contact to friend) */}
+      {friendLinkContact && (
+        <FriendLinkDialog
+          open={!!friendLinkContact}
+          contactDisplayName={friendLinkContact.displayName || 'Contact'}
+          friends={friends}
+          onLink={handleFriendLink}
+          onCancel={() => setFriendLinkContact(null)}
         />
       )}
 

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  areNicknameEquivalents,
   calculateMatchScore,
+  calculateNameScore,
   findMatchesForFriend,
   fuzzyNameMatch,
+  isPrefixMatch,
   normalizePhone,
 } from '~/lib/contact-matching'
 
@@ -67,6 +70,139 @@ describe('fuzzyNameMatch', () => {
   })
 })
 
+describe('areNicknameEquivalents', () => {
+  it('recognizes Mike and Michael', () => {
+    expect(areNicknameEquivalents('Mike', 'Michael')).toBe(true)
+  })
+
+  it('recognizes Bob and Robert', () => {
+    expect(areNicknameEquivalents('Bob', 'Robert')).toBe(true)
+  })
+
+  it('recognizes Bill and William', () => {
+    expect(areNicknameEquivalents('Bill', 'William')).toBe(true)
+  })
+
+  it('recognizes Liz and Elizabeth', () => {
+    expect(areNicknameEquivalents('Liz', 'Elizabeth')).toBe(true)
+  })
+
+  it('returns false for names in different groups', () => {
+    expect(areNicknameEquivalents('Mike', 'Bob')).toBe(false)
+  })
+
+  it('returns true for same name', () => {
+    expect(areNicknameEquivalents('Mike', 'Mike')).toBe(true)
+  })
+
+  it('is case-insensitive', () => {
+    expect(areNicknameEquivalents('mike', 'MICHAEL')).toBe(true)
+  })
+
+  it('returns false for names not in any group', () => {
+    expect(areNicknameEquivalents('Zara', 'Zena')).toBe(false)
+  })
+})
+
+describe('isPrefixMatch', () => {
+  it('matches Dan and Daniel', () => {
+    expect(isPrefixMatch('Dan', 'Daniel')).toBe(true)
+  })
+
+  it('matches Chris and Christopher', () => {
+    expect(isPrefixMatch('Chris', 'Christopher')).toBe(true)
+  })
+
+  it('rejects Jo and John (too short)', () => {
+    expect(isPrefixMatch('Jo', 'John')).toBe(false)
+  })
+
+  it('rejects Al and Alice (too short)', () => {
+    expect(isPrefixMatch('Al', 'Alice')).toBe(false)
+  })
+
+  it('matches Dan and Danny', () => {
+    expect(isPrefixMatch('Dan', 'Danny')).toBe(true)
+  })
+
+  it('is case-insensitive', () => {
+    expect(isPrefixMatch('dan', 'DANIEL')).toBe(true)
+  })
+
+  it('works in both directions', () => {
+    expect(isPrefixMatch('Daniel', 'Dan')).toBe(true)
+  })
+})
+
+describe('calculateNameScore', () => {
+  it('returns 0.5 for exact full name match', () => {
+    const result = calculateNameScore('John Doe', 'John Doe')
+    expect(result.score).toBe(0.5)
+    expect(result.reasons).toContain('Name matches exactly')
+  })
+
+  it('scores nickname + last name match (Mike Smith / Michael Smith)', () => {
+    const result = calculateNameScore('Mike Smith', 'Michael Smith')
+    expect(result.score).toBeGreaterThanOrEqual(0.4)
+    expect(result.reasons).toContain('Last name matches')
+    expect(result.reasons).toContain('Nickname match')
+  })
+
+  it('scores first-name-only contact as partial match (Sarah / Sarah Johnson)', () => {
+    const result = calculateNameScore('Sarah', 'Sarah Johnson')
+    expect(result.score).toBeGreaterThanOrEqual(0.2)
+  })
+
+  it('scores prefix + last name match (Dave Martinez / David Martinez)', () => {
+    const result = calculateNameScore('Dave Martinez', 'David Martinez')
+    // Dave→David is a nickname match (+0.2) + last name (+0.25) = 0.45
+    expect(result.score).toBeGreaterThanOrEqual(0.4)
+    expect(result.reasons).toContain('Last name matches')
+  })
+
+  it('scores prefix first name match (Chris Johnson / Christopher Johnson)', () => {
+    const result = calculateNameScore('Chris Johnson', 'Christopher Johnson')
+    expect(result.score).toBeGreaterThanOrEqual(0.4)
+    expect(result.reasons).toContain('Last name matches')
+  })
+
+  it('scores Bob Smith vs Robert Smith via nickname', () => {
+    const result = calculateNameScore('Bob Smith', 'Robert Smith')
+    expect(result.score).toBeGreaterThanOrEqual(0.4)
+    expect(result.reasons).toContain('Last name matches')
+    expect(result.reasons).toContain('Nickname match')
+  })
+
+  it('returns 0 for completely different names', () => {
+    const result = calculateNameScore('Alice Smith', 'Bob Johnson')
+    expect(result.score).toBe(0)
+    expect(result.reasons).toHaveLength(0)
+  })
+
+  it('returns 0 for empty names', () => {
+    expect(calculateNameScore('', 'John').score).toBe(0)
+    expect(calculateNameScore('John', '').score).toBe(0)
+  })
+
+  it('uses fuzzy fallback for names that are globally similar (>0.8)', () => {
+    // "Jon Doe" vs "John Doe" — high Levenshtein similarity on the full string
+    // Token-based: last name matches (+0.25), first name "jon" prefix of "john" (+0.15) = 0.4
+    const result = calculateNameScore('Jon Doe', 'John Doe')
+    expect(result.score).toBeGreaterThanOrEqual(0.3)
+    expect(result.reasons.length).toBeGreaterThan(0)
+  })
+
+  it('handles single-token names', () => {
+    const result = calculateNameScore('Dan', 'Daniel')
+    expect(result.score).toBeGreaterThanOrEqual(0.15)
+  })
+
+  it('caps score at 0.5', () => {
+    const result = calculateNameScore('John Doe', 'John Doe')
+    expect(result.score).toBeLessThanOrEqual(0.5)
+  })
+})
+
 describe('calculateMatchScore', () => {
   it('returns high confidence for exact name + email match', () => {
     const result = calculateMatchScore(
@@ -96,13 +232,13 @@ describe('calculateMatchScore', () => {
     expect(result.reasons).toContain('Email matches')
   })
 
-  it('returns confidence for fuzzy name match', () => {
+  it('returns confidence for similar names with matching last name', () => {
     const result = calculateMatchScore(
       { name: 'Jon Doe', email: null, phone: null },
       { name: 'John Doe', email: null, phone: null },
     )
     expect(result.confidence).toBeGreaterThan(0)
-    expect(result.reasons).toContain('Name is similar')
+    expect(result.reasons.length).toBeGreaterThan(0)
   })
 
   it('returns 0 for completely different contacts', () => {
@@ -149,6 +285,16 @@ describe('calculateMatchScore', () => {
       { name: 'Test', email: null, phone: '555.123.4567' },
     )
     expect(result.reasons).toContain('Phone matches')
+  })
+
+  it('matches nickname variants with email signal', () => {
+    const result = calculateMatchScore(
+      { name: 'Mike Smith', email: 'msmith@example.com', phone: null },
+      { name: 'Michael Smith', email: 'msmith@example.com', phone: null },
+    )
+    expect(result.confidence).toBeGreaterThanOrEqual(0.8)
+    expect(result.reasons).toContain('Nickname match')
+    expect(result.reasons).toContain('Email matches')
   })
 })
 
@@ -199,8 +345,8 @@ describe('findMatchesForFriend', () => {
       email: null,
       phone: null,
     })
-    // Fuzzy name-only match scores below 0.5 threshold — correct behavior
-    // to avoid false positives
+    // "Jonn Doe" vs "John Doe": last name +0.25, first name no match = 0.25
+    // Below 0.5 threshold — correct behavior to avoid false positives
     expect(matches).toHaveLength(0)
   })
 
@@ -221,8 +367,50 @@ describe('findMatchesForFriend', () => {
       email: 'john@example.com',
       phone: null,
     })
-    // Fuzzy name (0.3) + email match (0.5) = 0.8 confidence
+    // Name score (~0.4) + email match (0.5) = ~0.9 confidence
     expect(matches.length).toBeGreaterThanOrEqual(1)
     expect(matches[0].index).toBe(0) // "John Doe" with matching email
+  })
+
+  it('matches nickname variants (Mike vs Michael)', () => {
+    const nicknameContacts = [{ name: 'Mike Smith', email: null, phone: null }]
+    const matches = findMatchesForFriend(nicknameContacts, {
+      name: 'Michael Smith',
+      email: null,
+      phone: null,
+    })
+    expect(matches.length).toBeGreaterThan(0)
+    expect(matches[0].confidence).toBeGreaterThanOrEqual(0.4)
+  })
+
+  it('matches prefix names (Dan vs Daniel)', () => {
+    const prefixContacts = [{ name: 'Dan Brown', email: null, phone: null }]
+    const matches = findMatchesForFriend(
+      prefixContacts,
+      { name: 'Daniel Brown', email: null, phone: null },
+      0.3, // lower threshold for prefix-only matches
+    )
+    expect(matches.length).toBeGreaterThan(0)
+    expect(matches[0].confidence).toBeGreaterThanOrEqual(0.3)
+  })
+
+  it('matches first-name-only contacts to full names', () => {
+    const firstNameContacts = [{ name: 'Sarah', email: null, phone: null }]
+    const matches = findMatchesForFriend(
+      firstNameContacts,
+      { name: 'Sarah Johnson', email: null, phone: null },
+      0.2, // low threshold for partial name matches
+    )
+    expect(matches.length).toBeGreaterThan(0)
+  })
+
+  it('accepts custom threshold parameter', () => {
+    const matches = findMatchesForFriend(
+      contacts,
+      { name: 'Jonn Doe', email: null, phone: null },
+      0.2, // very low threshold
+    )
+    // "Jonn Doe" vs "John Doe": ~0.25 score — matches with low threshold
+    expect(matches.length).toBeGreaterThan(0)
   })
 })
