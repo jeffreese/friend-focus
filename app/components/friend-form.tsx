@@ -103,7 +103,7 @@ export function FriendForm({
       </FormField>
 
       {/* Contact info */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField>
           <Label htmlFor="phone">Phone</Label>
           <Input
@@ -126,7 +126,7 @@ export function FriendForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField>
           <Label htmlFor="birthday">Birthday</Label>
           <Input
@@ -161,7 +161,7 @@ export function FriendForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField>
           <Label htmlFor="employer">Employer</Label>
           <Input
@@ -180,7 +180,7 @@ export function FriendForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField>
           <Label htmlFor="loveLanguage">Love Language</Label>
           <Select

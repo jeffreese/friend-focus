@@ -31,6 +31,7 @@ import { FormField } from '~/components/ui/form-field'
 import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { ResponsiveTable } from '~/components/ui/responsive-table'
 import { Select } from '~/components/ui/select'
 import { SubmitButton } from '~/components/ui/submit-button'
 import {
@@ -502,7 +503,7 @@ export default function EventDetail({
 
       {/* Guest list */}
       <div className="rounded-xl border border-border-light bg-card mb-6">
-        <div className="p-5 border-b border-border-light flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-border-light flex items-center justify-between md:p-5">
           <h3 className="font-semibold flex items-center gap-2">
             <Users size={18} className="text-primary" />
             Guest List ({event.invitations.length}
@@ -516,7 +517,10 @@ export default function EventDetail({
 
         {addingGuest && (
           <div className="p-4 border-b border-border-light bg-muted/50">
-            <Form method="post" className="flex items-center gap-3">
+            <Form
+              method="post"
+              className="flex flex-col gap-3 sm:flex-row sm:items-center"
+            >
               <input type="hidden" name="intent" value="add-guest" />
               <Select name="friendId" className="flex-1">
                 <option value="">Select a friend...</option>
@@ -547,41 +551,52 @@ export default function EventDetail({
             <p>No guests yet. Add friends to the guest list.</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {(
-                  [
-                    { key: 'name', label: 'Name' },
-                    { key: 'tier', label: 'Tier' },
-                    { key: 'rsvp', label: 'RSVP' },
-                    { key: 'attended', label: 'Attended' },
-                  ] as const
-                ).map(col => (
-                  <TableHead key={col.key}>
-                    <button
-                      type="button"
-                      className="flex items-center hover:text-foreground transition-colors"
-                      onClick={() => handleSort(col.key)}
-                    >
-                      {col.label}
-                      <SortIcon
-                        column={col.key}
-                        sortKey={sortKey}
-                        sortDir={sortDir}
-                      />
-                    </button>
-                  </TableHead>
+          <ResponsiveTable
+            table={
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {(
+                      [
+                        { key: 'name', label: 'Name' },
+                        { key: 'tier', label: 'Tier' },
+                        { key: 'rsvp', label: 'RSVP' },
+                        { key: 'attended', label: 'Attended' },
+                      ] as const
+                    ).map(col => (
+                      <TableHead key={col.key}>
+                        <button
+                          type="button"
+                          className="flex items-center hover:text-foreground transition-colors"
+                          onClick={() => handleSort(col.key)}
+                        >
+                          {col.label}
+                          <SortIcon
+                            column={col.key}
+                            sortKey={sortKey}
+                            sortDir={sortDir}
+                          />
+                        </button>
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedInvitations.map(inv => (
+                    <GuestRow key={inv.id} invitation={inv} />
+                  ))}
+                </TableBody>
+              </Table>
+            }
+            cards={
+              <div className="divide-y divide-border-light">
+                {sortedInvitations.map(inv => (
+                  <GuestCard key={inv.id} invitation={inv} />
                 ))}
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedInvitations.map(inv => (
-                <GuestRow key={inv.id} invitation={inv} />
-              ))}
-            </TableBody>
-          </Table>
+              </div>
+            }
+          />
         )}
       </div>
 
@@ -602,46 +617,57 @@ export default function EventDetail({
               Recalculate
             </Link>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10" />
-                {(
-                  [
-                    { key: 'name', label: 'Name', center: false },
-                    { key: 'score', label: 'Score', center: true },
-                    { key: 'interest', label: 'Interest', center: true },
-                    { key: 'tier', label: 'Tier', center: true },
-                    { key: 'social', label: 'Social', center: true },
-                  ] as const
-                ).map(col => (
-                  <TableHead
-                    key={col.key}
-                    className={col.center ? 'text-center' : ''}
-                  >
-                    <button
-                      type="button"
-                      className={`flex items-center hover:text-foreground transition-colors ${col.center ? 'mx-auto' : ''}`}
-                      onClick={() => handleRecSort(col.key)}
-                    >
-                      {col.label}
-                      <SortIcon
-                        column={col.key}
-                        sortKey={recSortKey}
-                        sortDir={recSortDir}
-                      />
-                    </button>
-                  </TableHead>
+          <ResponsiveTable
+            table={
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10" />
+                    {(
+                      [
+                        { key: 'name', label: 'Name', center: false },
+                        { key: 'score', label: 'Score', center: true },
+                        { key: 'interest', label: 'Interest', center: true },
+                        { key: 'tier', label: 'Tier', center: true },
+                        { key: 'social', label: 'Social', center: true },
+                      ] as const
+                    ).map(col => (
+                      <TableHead
+                        key={col.key}
+                        className={col.center ? 'text-center' : ''}
+                      >
+                        <button
+                          type="button"
+                          className={`flex items-center hover:text-foreground transition-colors ${col.center ? 'mx-auto' : ''}`}
+                          onClick={() => handleRecSort(col.key)}
+                        >
+                          {col.label}
+                          <SortIcon
+                            column={col.key}
+                            sortKey={recSortKey}
+                            sortDir={recSortDir}
+                          />
+                        </button>
+                      </TableHead>
+                    ))}
+                    <TableHead>Why</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedRecommendations.map(rec => (
+                    <RecommendationRow key={rec.friendId} rec={rec} />
+                  ))}
+                </TableBody>
+              </Table>
+            }
+            cards={
+              <div className="divide-y divide-border-light">
+                {sortedRecommendations.map(rec => (
+                  <RecommendationCard key={rec.friendId} rec={rec} />
                 ))}
-                <TableHead>Why</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRecommendations.map(rec => (
-                <RecommendationRow key={rec.friendId} rec={rec} />
-              ))}
-            </TableBody>
-          </Table>
+              </div>
+            }
+          />
         </div>
       )}
 
@@ -814,8 +840,8 @@ function EventEditForm({
       className="rounded-xl border border-border-light bg-card p-6 mb-6 space-y-4"
     >
       <input type="hidden" name="intent" value="update-event" />
-      <div className="grid grid-cols-2 gap-4">
-        <FormField className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormField className="sm:col-span-2">
           <Label htmlFor="edit-name">
             Event Name <span className="text-destructive">*</span>
           </Label>
@@ -999,6 +1025,171 @@ function GuestRow({
         </InlineConfirmDelete>
       </TableCell>
     </TableRow>
+  )
+}
+
+function GuestCard({
+  invitation,
+}: {
+  invitation: {
+    id: string
+    friendId: string
+    friendName: string
+    tierLabel: string | null
+    tierColor: string | null
+    tierSortOrder: number | null
+    status: string
+    attended: boolean | null
+  }
+}) {
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-2">
+        <Link
+          to={`/friends/${invitation.friendId}`}
+          className="font-medium hover:text-primary"
+        >
+          {invitation.friendName}
+        </Link>
+        <div className="flex items-center gap-2">
+          {invitation.tierLabel ? (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{
+                color: invitation.tierColor || undefined,
+                borderColor: invitation.tierColor || undefined,
+                border: '1px solid',
+              }}
+            >
+              {invitation.tierLabel}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">No tier</span>
+          )}
+          <InlineConfirmDelete>
+            <Form method="post" className="inline">
+              <input type="hidden" name="intent" value="remove-guest" />
+              <input type="hidden" name="invitationId" value={invitation.id} />
+              <button
+                type="submit"
+                className="text-destructive hover:text-destructive/80 transition-colors p-1"
+                aria-label="Confirm delete"
+              >
+                <Check size={14} />
+              </button>
+            </Form>
+          </InlineConfirmDelete>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Form method="post" className="inline">
+          <input type="hidden" name="intent" value="update-rsvp" />
+          <input type="hidden" name="invitationId" value={invitation.id} />
+          <Select
+            name="status"
+            defaultValue={invitation.status}
+            onChange={e => e.target.form?.requestSubmit()}
+            className="h-7 text-xs w-auto"
+          >
+            {INVITATION_STATUSES.map(s => (
+              <option key={s} value={s}>
+                {INVITATION_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </Select>
+        </Form>
+        <Form method="post" className="inline">
+          <input type="hidden" name="intent" value="update-attended" />
+          <input type="hidden" name="invitationId" value={invitation.id} />
+          <Select
+            name="attended"
+            defaultValue={
+              invitation.attended === null ? '' : String(invitation.attended)
+            }
+            onChange={e => e.target.form?.requestSubmit()}
+            className="h-7 text-xs w-auto"
+          >
+            <option value="">{'\u2014'}</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </Select>
+        </Form>
+      </div>
+    </div>
+  )
+}
+
+function RecommendationCard({ rec }: { rec: FriendRecommendation }) {
+  return (
+    <div
+      className={`p-4 ${
+        rec.isInvited ? 'bg-primary/5' : !rec.available ? 'opacity-60' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <Link
+          to={`/friends/${rec.friendId}`}
+          className="font-medium hover:text-primary transition-colors"
+        >
+          {rec.friendName}
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold">{rec.score}</span>
+          <Form method="post" className="inline">
+            <input type="hidden" name="intent" value="toggle-invitation" />
+            <input type="hidden" name="friendId" value={rec.friendId} />
+            {rec.invitationId && (
+              <input
+                type="hidden"
+                name="invitationId"
+                value={rec.invitationId}
+              />
+            )}
+            <button
+              type="submit"
+              className={`p-1 rounded-full transition-colors ${
+                rec.isInvited
+                  ? 'text-primary hover:text-primary/70'
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+            >
+              {rec.isInvited ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <PlusCircle size={18} />
+              )}
+            </button>
+          </Form>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
+          {rec.interest.rating}
+        </span>
+        {rec.tierLabel ? (
+          <span
+            className="px-2 py-0.5 rounded-full font-medium"
+            style={{
+              color: rec.tierColor || undefined,
+              borderColor: rec.tierColor || undefined,
+              border: '1px solid',
+            }}
+          >
+            {rec.tierLabel}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">No tier</span>
+        )}
+        {rec.socialFit.of > 0 && (
+          <span className="text-muted-foreground">
+            Social: {rec.socialFit.knows}/{rec.socialFit.of}
+          </span>
+        )}
+      </div>
+      {rec.explanation && (
+        <p className="text-xs text-muted-foreground mt-2">{rec.explanation}</p>
+      )}
+    </div>
   )
 }
 

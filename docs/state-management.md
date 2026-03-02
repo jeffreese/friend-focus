@@ -4,7 +4,7 @@ State in this template is split into two categories with different tools for
 each:
 
 1. **Server state** — Data from loaders and actions (React Router handles this)
-2. **Client UI state** — Ephemeral UI concerns like sidebar collapse (Zustand
+2. **Client UI state** — Ephemeral UI concerns like mobile nav state (Zustand
    handles this)
 
 ## Server State
@@ -42,22 +42,21 @@ store for sidebar state:
 import { create } from 'zustand'
 
 interface UIState {
-  sidebarCollapsed: boolean
-  toggleSidebar: () => void
+  mobileNavOpen: boolean
+  setMobileNavOpen: (open: boolean) => void
 }
 
 export const useUIStore = create<UIState>(set => ({
-  sidebarCollapsed: false,
-  toggleSidebar: () =>
-    set(state => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  mobileNavOpen: false,
+  setMobileNavOpen: (open: boolean) => set({ mobileNavOpen: open }),
 }))
 ```
 
 Use it in components with selector hooks:
 
 ```tsx
-const collapsed = useUIStore(s => s.sidebarCollapsed)
-const toggleSidebar = useUIStore(s => s.toggleSidebar)
+const mobileNavOpen = useUIStore(s => s.mobileNavOpen)
+const setMobileNavOpen = useUIStore(s => s.setMobileNavOpen)
 ```
 
 ## When to Use What
@@ -66,7 +65,7 @@ const toggleSidebar = useUIStore(s => s.toggleSidebar)
 |------|------|
 | Data from the database | React Router loader |
 | Form submissions, mutations | React Router action |
-| Sidebar open/closed | Zustand store |
+| Mobile nav open/closed | Zustand store |
 | Modal visibility | Zustand store or `useState` |
 | Theme preference | Zustand store (with persistence) |
 | Form field values | Conform (managed by the form library) |

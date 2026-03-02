@@ -13,9 +13,12 @@ function PageHeader({
   return (
     <div
       data-slot="page-header"
-      className={cn('flex items-center justify-between mb-6', className)}
+      className={cn(
+        'flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between',
+        className,
+      )}
     >
-      <h2 className="text-2xl font-bold">{title}</h2>
+      <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
       {children && <div className="flex items-center gap-2">{children}</div>}
     </div>
   )

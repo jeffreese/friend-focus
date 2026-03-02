@@ -196,8 +196,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-bold sm:text-2xl">Dashboard</h2>
         <Button asChild>
           <Link to="/friends/new">
             <Plus size={16} className="mr-2" />
@@ -207,7 +207,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Link
           to="/friends"
           className="rounded-xl border border-border-light bg-card p-4 hover:border-primary/30 transition-colors"
