@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Form, Link, useActionData, useRouteError } from 'react-router'
+import { toast } from 'sonner'
 import { ActivityInterestsSummary } from '~/components/activity-interests-summary'
 import { CareModeBadge, CareModeBanner } from '~/components/care-mode-indicator'
 import { GoogleContactLinkDialog } from '~/components/google-contact-link-dialog'
@@ -258,6 +259,18 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
     cachedContacts,
   } = loaderData
   const actionData = useActionData<typeof action>()
+
+  // Show action errors as toasts
+  useEffect(() => {
+    if (
+      actionData &&
+      'error' in actionData &&
+      typeof actionData.error === 'string'
+    ) {
+      toast.error(actionData.error)
+    }
+  }, [actionData])
+
   const [addingGift, setAddingGift] = useState(false)
   const [addingAvailability, setAddingAvailability] = useState(false)
   const [addingConnection, setAddingConnection] = useState(false)
@@ -416,16 +429,6 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Action error banner */}
-      {actionData &&
-        'error' in actionData &&
-        typeof actionData.error === 'string' && (
-          <div className="mb-4 px-4 py-3 rounded-lg bg-destructive-light text-destructive text-sm flex items-center gap-2">
-            <MessageSquare size={14} />
-            {actionData.error}
-          </div>
-        )}
-
       {/* Back link */}
       <BackLink to="/friends">Back to Friends</BackLink>
 

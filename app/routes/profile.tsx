@@ -1,8 +1,9 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { and, eq } from 'drizzle-orm'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, useActionData, useLoaderData, useNavigation } from 'react-router'
+import { toast } from 'sonner'
 import { GoogleScopeUpgrade } from '~/components/google-scope-upgrade'
 import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
@@ -176,14 +177,6 @@ export async function action({ request }: Route.ActionArgs) {
   return null
 }
 
-function SuccessBanner({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg bg-success/10 px-4 py-3 text-sm text-success">
-      <p>{children}</p>
-    </div>
-  )
-}
-
 export default function Profile() {
   const {
     user,
@@ -198,8 +191,19 @@ export default function Profile() {
   const [showScopeUpgrade, setShowScopeUpgrade] = useState(false)
 
   const isSuccess = actionData && 'success' in actionData
-  const nameSuccess = isSuccess && actionData.success === 'name'
-  const passwordSuccess = isSuccess && actionData.success === 'password'
+
+  useEffect(() => {
+    if (!isSuccess) return
+    if (actionData.success === 'name') {
+      toast.success('Name updated successfully.')
+    } else if (actionData.success === 'password') {
+      toast.success(
+        hasPassword
+          ? 'Password changed successfully.'
+          : 'Password set successfully.',
+      )
+    }
+  }, [actionData])
 
   const [nameForm, nameFields] = useForm({
     id: 'update-name',
@@ -238,12 +242,6 @@ export default function Profile() {
 
       <div className="space-y-6">
         <SectionCard title="Name">
-          {nameSuccess && (
-            <div className="mb-4">
-              <SuccessBanner>Name updated successfully.</SuccessBanner>
-            </div>
-          )}
-
           <Form
             method="post"
             id={nameForm.id}
@@ -281,18 +279,16 @@ export default function Profile() {
 
         {hasPassword ? (
           <SectionCard title="Change password">
-            {passwordSuccess && (
-              <div className="mb-4">
-                <SuccessBanner>Password changed successfully.</SuccessBanner>
-              </div>
-            )}
-
             <Form
               method="post"
               id={changePasswordForm.id}
               onSubmit={changePasswordForm.onSubmit}
               noValidate
-              key={passwordSuccess ? 'reset' : 'form'}
+              key={
+                isSuccess && actionData.success === 'password'
+                  ? 'reset'
+                  : 'form'
+              }
             >
               <input type="hidden" name="intent" value="change-password" />
               <FormError errors={changePasswordForm.errors} className="mb-4" />
@@ -362,18 +358,16 @@ export default function Profile() {
               in with your email and password.
             </p>
 
-            {passwordSuccess && (
-              <div className="mb-4">
-                <SuccessBanner>Password set successfully.</SuccessBanner>
-              </div>
-            )}
-
             <Form
               method="post"
               id={setPasswordForm.id}
               onSubmit={setPasswordForm.onSubmit}
               noValidate
-              key={passwordSuccess ? 'reset' : 'form'}
+              key={
+                isSuccess && actionData.success === 'password'
+                  ? 'reset'
+                  : 'form'
+              }
             >
               <input type="hidden" name="intent" value="set-password" />
               <FormError errors={setPasswordForm.errors} className="mb-4" />

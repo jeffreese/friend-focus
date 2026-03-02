@@ -1,6 +1,7 @@
-import { ArrowRight, Check, Link2, RefreshCw, UserPlus } from 'lucide-react'
+import { ArrowRight, Link2, RefreshCw, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
+import { toast } from 'sonner'
 import { SyncDiffDialog } from '~/components/google-sync-diff'
 import { Avatar } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
@@ -35,7 +36,6 @@ export function GoogleContactsList({
   const [linkingContact, setLinkingContact] =
     useState<CachedContactWithStatus | null>(null)
   const [linkDiffs, setLinkDiffs] = useState<FieldDiff[] | null>(null)
-  const [linkSuccess, setLinkSuccess] = useState<string | null>(null)
 
   const phoneCount = contacts.filter(c => c.phone).length
   const displayContacts = contacts
@@ -105,7 +105,6 @@ export function GoogleContactsList({
     if (!contact.suggestedFriendId) return
     setActionInProgress(contact.resourceName)
     setLinkingContact(contact)
-    setLinkSuccess(null)
 
     try {
       // Step 1: Link the friend to the Google contact
@@ -154,20 +153,20 @@ export function GoogleContactsList({
             value: d.appValue || d.googleValue || undefined,
           }))
           await handleLinkDiffApply(autoResolutions, contact.suggestedFriendId!)
-          setLinkSuccess(contact.suggestedFriendName || 'friend')
-          // Auto-dismiss success after 3s
-          setTimeout(() => setLinkSuccess(null), 3000)
+          toast.success(
+            `Linked to ${contact.suggestedFriendName || 'friend'} — all data is in sync.`,
+          )
         } else {
           // Has real conflicts — show the diff dialog for user review
           setLinkDiffs(diffs)
         }
       } else {
         // No diffs — show success and revalidate
-        setLinkSuccess(contact.suggestedFriendName || 'friend')
+        toast.success(
+          `Linked to ${contact.suggestedFriendName || 'friend'} — all data is in sync.`,
+        )
         setLinkingContact(null)
         revalidator.revalidate()
-        // Auto-dismiss success after 3s
-        setTimeout(() => setLinkSuccess(null), 3000)
       }
     } catch {
       // If something fails, still revalidate to show current state
@@ -299,14 +298,6 @@ export function GoogleContactsList({
         placeholder="Search contacts..."
         onChange={e => setSearch(e.target.value)}
       />
-
-      {/* Link success banner */}
-      {linkSuccess && (
-        <div className="flex items-center gap-2 rounded-lg bg-success/10 px-4 py-3 mb-4 text-sm text-success">
-          <Check size={14} />
-          Linked to {linkSuccess} — all data is in sync.
-        </div>
-      )}
 
       {/* Contact list */}
       {displayContacts.length === 0 ? (
