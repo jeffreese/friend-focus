@@ -64,6 +64,7 @@ export function getRecommendations(
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
       tierSortOrder: closenessTier.sortOrder,
+      tierHidden: closenessTier.hidden,
     })
     .from(friend)
     .leftJoin(closenessTier, eq(friend.closenessTierId, closenessTier.id))
@@ -234,6 +235,7 @@ export function getRecommendations(
       tierLabel: f.tierLabel ?? null,
       tierColor: f.tierColor ?? null,
       tierSortOrder: f.tierSortOrder ?? null,
+      tierHidden: f.tierHidden ?? false,
       score: compositeScore,
       interest: { rating: interestLabel, score: interestScore },
       closeness: { tier: f.tierLabel ?? null, score: closenessScore },

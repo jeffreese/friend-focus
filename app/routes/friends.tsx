@@ -1,4 +1,4 @@
-import { Plus, Sparkles, Users } from 'lucide-react'
+import { EyeOff, Plus, Sparkles, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { CareModeBadge } from '~/components/care-mode-indicator'
@@ -39,8 +39,15 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sortBy =
     (url.searchParams.get('sort') as 'name' | 'closeness' | 'createdAt') ||
     'closeness'
+  const showHidden = url.searchParams.get('showHidden') === '1'
 
-  const friends = getFriends({ userId, search, tierId, sortBy })
+  const friends = getFriends({
+    userId,
+    search,
+    tierId,
+    sortBy,
+    excludeHidden: !showHidden,
+  })
   const tiers = getClosenessTiers(userId)
 
   // Check if the user has Google Contacts scope
@@ -59,9 +66,13 @@ export async function loader({ request }: Route.LoaderArgs) {
       : null
   }
 
+  const hasHiddenTiers = tiers.some(t => t.hidden)
+
   return {
     friends,
     tiers,
+    showHidden,
+    hasHiddenTiers,
     hasGoogleContacts,
     hasGoogleWrite,
     cachedContacts,
@@ -73,6 +84,8 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
   const {
     friends,
     tiers,
+    showHidden,
+    hasHiddenTiers,
     hasGoogleContacts,
     hasGoogleWrite,
     cachedContacts,
@@ -107,7 +120,8 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
     setSearchParams(params, { replace: true })
   }
 
-  const totalFriends = tiers.reduce((sum, t) => sum + t.friendCount, 0)
+  const visibleTiers = showHidden ? tiers : tiers.filter(t => !t.hidden)
+  const totalFriends = visibleTiers.reduce((sum, t) => sum + t.friendCount, 0)
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -186,7 +200,7 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
             >
               All ({totalFriends})
             </FilterPill>
-            {tiers.map(tier => (
+            {visibleTiers.map(tier => (
               <FilterPill
                 key={tier.id}
                 active={currentTier === tier.id}
@@ -205,6 +219,23 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
                 {tier.label} ({tier.friendCount})
               </FilterPill>
             ))}
+            {hasHiddenTiers && (
+              <button
+                type="button"
+                onClick={() =>
+                  updateParams({ showHidden: showHidden ? '' : '1' })
+                }
+                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors ${
+                  showHidden
+                    ? 'bg-muted text-foreground border-border'
+                    : 'text-muted-foreground border-transparent hover:text-foreground'
+                }`}
+                title={showHidden ? 'Hide hidden tiers' : 'Show hidden tiers'}
+              >
+                <EyeOff size={12} />
+                {showHidden ? 'Hiding shown' : 'Show hidden'}
+              </button>
+            )}
           </div>
 
           {/* Friend cards */}

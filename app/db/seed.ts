@@ -24,8 +24,8 @@ const defaultTiers = [
   { label: 'Childhood', sortOrder: 7, color: '#c4952e' },
   { label: 'Moved', sortOrder: 8, color: '#808080' },
   { label: 'Drifted', sortOrder: 9, color: '#a0a0a0' },
-  { label: 'Fell Out', sortOrder: 10, color: '#c0392b' },
-  { label: 'Passed', sortOrder: 11, color: '#2c3e50' },
+  { label: 'Fell Out', sortOrder: 10, color: '#c0392b', hidden: true },
+  { label: 'Passed', sortOrder: 11, color: '#2c3e50', hidden: true },
 ]
 
 const defaultActivities = [

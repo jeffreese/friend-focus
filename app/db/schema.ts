@@ -72,6 +72,7 @@ export const closenessTier = sqliteTable(
     label: text('label').notNull(),
     sortOrder: integer('sort_order').notNull(),
     color: text('color'),
+    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
