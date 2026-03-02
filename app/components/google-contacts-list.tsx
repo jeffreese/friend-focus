@@ -78,9 +78,14 @@ export function GoogleContactsList({
       c.suggestedConfidence >= 0.3 &&
       c.suggestedConfidence < 0.5,
   )
-  const otherContacts = displayContacts.filter(
-    c => !suggestedMatches.includes(c) && !possibleMatches.includes(c),
-  )
+  const otherContacts = displayContacts
+    .filter(c => !suggestedMatches.includes(c) && !possibleMatches.includes(c))
+    .sort((a, b) => {
+      // Unlinked contacts first, linked contacts last
+      if (a.linkedFriendId && !b.linkedFriendId) return 1
+      if (!a.linkedFriendId && b.linkedFriendId) return -1
+      return 0
+    })
 
   async function handleBulkSync() {
     setSyncing(true)
