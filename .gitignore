@@ -11,6 +11,7 @@
 *.db-journal
 *.db-wal
 *.db-shm
+/data/
 
 # Vite
 .vite/
