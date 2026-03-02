@@ -153,7 +153,7 @@ export function GoogleContactsList({
               | 'keep-app',
             value: d.appValue || d.googleValue || undefined,
           }))
-          await handleLinkDiffApply(autoResolutions)
+          await handleLinkDiffApply(autoResolutions, contact.suggestedFriendId!)
           setLinkSuccess(contact.suggestedFriendName || 'friend')
           // Auto-dismiss success after 3s
           setTimeout(() => setLinkSuccess(null), 3000)
@@ -184,8 +184,10 @@ export function GoogleContactsList({
       action: 'use-google' | 'keep-app' | 'push-to-google' | 'skip'
       value?: string
     }>,
+    friendId?: string,
   ) {
-    if (!linkingContact?.suggestedFriendId) return
+    const resolvedFriendId = friendId || linkingContact?.suggestedFriendId
+    if (!resolvedFriendId) return
 
     try {
       await fetch('/api/google-contacts', {
@@ -193,7 +195,7 @@ export function GoogleContactsList({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           intent: 'resolve-diffs',
-          friendId: linkingContact.suggestedFriendId,
+          friendId: resolvedFriendId,
           resolutions,
         }),
       })
