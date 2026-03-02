@@ -67,7 +67,8 @@ function SidebarNav({
 }) {
   return (
     <>
-      <div className="flex h-14 items-center border-b border-white/10 px-4">
+      <div className="flex h-14 items-center gap-2.5 border-b border-white/10 px-4">
+        <img src="/icon.svg" alt="" className="h-7 w-7 rounded-md" />
         <div>
           <h1 className="text-sm font-bold text-sidebar-text">{APP_NAME}</h1>
           <p className="text-[10px] text-sidebar-text-muted">
@@ -172,6 +173,7 @@ export default function Layout() {
           >
             <Menu className="h-5 w-5" />
           </button>
+          <img src="/icon.svg" alt="" className="h-6 w-6 rounded" />
           <span className="text-sm font-bold">{APP_NAME}</span>
         </header>
 
