@@ -24,7 +24,7 @@ function SectionCard({
       className={cn('rounded-xl border border-border-light bg-card', className)}
       {...props}
     >
-      <div className="p-5 border-b border-border-light flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-border-light flex items-center justify-between md:p-5">
         <h3 className="font-semibold flex items-center gap-2">
           {icon}
           {title}
@@ -34,7 +34,7 @@ function SectionCard({
         </h3>
         {action}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 md:p-5">{children}</div>
     </section>
   )
 }

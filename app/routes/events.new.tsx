@@ -146,7 +146,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         </FormField>
 
         {/* Date and Time */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField>
             <Label htmlFor={fields.date.id}>Date</Label>
             <Input id={fields.date.id} name={fields.date.name} type="date" />
@@ -170,7 +170,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         </FormField>
 
         {/* Capacity and Vibe */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField>
             <Label htmlFor={fields.capacity.id}>Capacity</Label>
             <Input

@@ -159,7 +159,7 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
       ) : (
         <>
           {/* Search and sort */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center">
             <SearchInput
               className="flex-1"
               value={searchValue}

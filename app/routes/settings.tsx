@@ -186,7 +186,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       {/* Closeness Tiers tab */}
       {tab === 'tiers' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Define closeness tiers to categorize your friendships.
             </p>
@@ -347,7 +347,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       {/* Activities tab */}
       {tab === 'activities' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Manage activities that friends can be rated on.
             </p>

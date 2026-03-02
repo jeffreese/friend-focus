@@ -499,8 +499,8 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       )}
 
       {/* Profile header */}
-      <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
-        <div className="flex items-start justify-between">
+      <div className="rounded-xl border border-border-light bg-card p-4 sm:p-6 mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar
               name={friend.name}
@@ -678,7 +678,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Detail sections — three columns */}
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
         {/* Activity Interests */}
         <SectionCard
           icon={<Sparkles size={18} className="text-primary" />}
@@ -916,7 +916,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                 </option>
               ))}
             </Select>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Select name="type">
                 <option value="">Type (optional)</option>
                 {CONNECTION_TYPES.map(t => (
@@ -933,7 +933,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                 ))}
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Input name="howTheyMet" placeholder="How they met" />
               <Input name="startDate" type="date" />
             </div>
@@ -987,7 +987,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                         {c.otherFriendName}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Select name="type" defaultValue={c.type || ''}>
                         <option value="">Type (optional)</option>
                         {CONNECTION_TYPES.map(t => (
@@ -1007,7 +1007,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                         ))}
                       </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         name="howTheyMet"
                         placeholder="How they met"

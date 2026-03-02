@@ -9,6 +9,7 @@ import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { PageHeader } from '~/components/ui/page-header'
+import { ResponsiveTable } from '~/components/ui/responsive-table'
 import { SearchInput } from '~/components/ui/search-input'
 import { Select } from '~/components/ui/select'
 import { StrengthDots } from '~/components/ui/strength-dots'
@@ -174,7 +175,7 @@ export default function Relationships({ loaderData }: Route.ComponentProps) {
           onSubmit={() => setShowAddForm(false)}
         >
           <input type="hidden" name="intent" value="add-connection" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <Label htmlFor="friendAId">Friend A</Label>
               <Select name="friendAId" id="friendAId" required>
@@ -219,7 +220,7 @@ export default function Relationships({ loaderData }: Route.ComponentProps) {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label htmlFor="howTheyMet">How they met</Label>
               <Input
@@ -323,7 +324,7 @@ export default function Relationships({ loaderData }: Route.ComponentProps) {
       {/* List view */}
       {view === 'list' && (
         <div className="rounded-xl border border-border-light bg-card">
-          <div className="p-4 border-b border-border-light flex items-center justify-between">
+          <div className="p-4 border-b border-border-light flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-semibold text-sm">
               {selectedFriend
                 ? `Connections for ${selectedFriend.name}`
@@ -342,32 +343,48 @@ export default function Relationships({ loaderData }: Route.ComponentProps) {
               placeholder="Search connections..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-64"
+              className="w-full sm:w-64"
             />
           </div>
           {filteredConnections.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Friend A</TableHead>
-                  <TableHead>Friend B</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Strength</TableHead>
-                  <TableHead>How They Met</TableHead>
-                  <TableHead className="text-right w-16" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredConnections.map(c => (
-                  <ConnectionRow
-                    key={c.id}
-                    connection={c}
-                    nameA={friendMap.get(c.friendAId) || 'Unknown'}
-                    nameB={friendMap.get(c.friendBId) || 'Unknown'}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            <ResponsiveTable
+              table={
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Friend A</TableHead>
+                      <TableHead>Friend B</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Strength</TableHead>
+                      <TableHead>How They Met</TableHead>
+                      <TableHead className="text-right w-16" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredConnections.map(c => (
+                      <ConnectionRow
+                        key={c.id}
+                        connection={c}
+                        nameA={friendMap.get(c.friendAId) || 'Unknown'}
+                        nameB={friendMap.get(c.friendBId) || 'Unknown'}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              }
+              cards={
+                <div className="divide-y divide-border-light">
+                  {filteredConnections.map(c => (
+                    <ConnectionCard
+                      key={c.id}
+                      connection={c}
+                      nameA={friendMap.get(c.friendAId) || 'Unknown'}
+                      nameB={friendMap.get(c.friendBId) || 'Unknown'}
+                    />
+                  ))}
+                </div>
+              }
+            />
           ) : (
             <EmptyState
               icon={Network}
@@ -451,5 +468,67 @@ function ConnectionRow({
         </InlineConfirmDelete>
       </TableCell>
     </TableRow>
+  )
+}
+
+function ConnectionCard({
+  connection,
+  nameA,
+  nameB,
+}: {
+  connection: {
+    id: string
+    type: string | null
+    strength: number | null
+    howTheyMet: string | null
+    friendAId: string
+    friendBId: string
+  }
+  nameA: string
+  nameB: string
+}) {
+  const strengthLabel =
+    CONNECTION_STRENGTHS[(connection.strength ?? 3) - 1] || 'Unknown'
+
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2 text-sm min-w-0">
+          <Link
+            to={`/friends/${connection.friendAId}`}
+            className="text-primary hover:underline font-medium truncate"
+          >
+            {nameA}
+          </Link>
+          <span className="text-muted-foreground shrink-0">&harr;</span>
+          <Link
+            to={`/friends/${connection.friendBId}`}
+            className="text-primary hover:underline font-medium truncate"
+          >
+            {nameB}
+          </Link>
+        </div>
+        <InlineConfirmDelete>
+          <Form method="post" className="inline">
+            <input type="hidden" name="intent" value="delete-connection" />
+            <input type="hidden" name="connectionId" value={connection.id} />
+            <button
+              type="submit"
+              className="text-destructive hover:text-destructive/80 transition-colors p-1"
+              aria-label="Confirm delete"
+            >
+              <Check size={14} />
+            </button>
+          </Form>
+        </InlineConfirmDelete>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        {connection.type && <span>{connection.type}</span>}
+        <StrengthDots value={connection.strength ?? 3} label={strengthLabel} />
+        {connection.howTheyMet && (
+          <span className="truncate">{connection.howTheyMet}</span>
+        )}
+      </div>
+    </div>
   )
 }
