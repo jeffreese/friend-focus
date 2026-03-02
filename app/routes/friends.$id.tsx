@@ -8,24 +8,38 @@ import {
   Edit,
   FileText,
   Gift,
+  Link2,
+  Link2Off,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
   Plus,
+  RefreshCw,
   Sparkles,
   Trash2,
   Users,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Form, Link, useActionData, useRouteError } from 'react-router'
 import { ActivityInterestsSummary } from '~/components/activity-interests-summary'
 import { CareModeBadge, CareModeBanner } from '~/components/care-mode-indicator'
+import { GoogleContactLinkDialog } from '~/components/google-contact-link-dialog'
+import { SyncDiffBanner, SyncDiffDialog } from '~/components/google-sync-diff'
 import { Avatar } from '~/components/ui/avatar'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog'
 import { ErrorDisplay } from '~/components/ui/error-display'
+import { GoogleIcon } from '~/components/ui/google-button'
 import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
 import { Input } from '~/components/ui/input'
 import { SectionCard } from '~/components/ui/section-card'
@@ -56,6 +70,14 @@ import {
   deleteGiftIdea,
   toggleGiftPurchased,
 } from '~/lib/gift-idea.server'
+import {
+  hasContactsReadScope,
+  hasContactsWriteScope,
+} from '~/lib/google-contacts.server'
+import {
+  type FieldDiff,
+  getCachedContactsWithStatus,
+} from '~/lib/google-contacts-sync.server'
 import { createNote, deleteNote, updateNote } from '~/lib/note.server'
 import {
   availabilitySchema,
@@ -85,7 +107,35 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const allFriends = getFriendOptions(userId)
 
-  return { friend, allFriends }
+  // Google Contacts integration data
+  const hasGoogleContacts = await hasContactsReadScope(userId)
+  const hasGoogleWrite = hasGoogleContacts && hasContactsWriteScope(userId)
+  const isLinked = !!friend.googleContactResourceName
+
+  let syncStatus: 'fresh' | 'stale' | 'never' = 'never'
+  if (isLinked && friend.lastGoogleSyncAt) {
+    const lastSync = new Date(friend.lastGoogleSyncAt)
+    const daysSinceSync =
+      (Date.now() - lastSync.getTime()) / (1000 * 60 * 60 * 24)
+    syncStatus = daysSinceSync > 30 ? 'stale' : 'fresh'
+  }
+
+  // Get cached contacts for the link dialog (only if Google connected)
+  let cachedContacts: Awaited<ReturnType<typeof getCachedContactsWithStatus>> =
+    []
+  if (hasGoogleContacts) {
+    cachedContacts = getCachedContactsWithStatus(userId)
+  }
+
+  return {
+    friend,
+    allFriends,
+    hasGoogleContacts,
+    hasGoogleWrite,
+    isLinked,
+    syncStatus,
+    cachedContacts,
+  }
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -198,7 +248,15 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 export default function FriendDetail({ loaderData }: Route.ComponentProps) {
-  const { friend, allFriends } = loaderData
+  const {
+    friend,
+    allFriends,
+    hasGoogleContacts,
+    hasGoogleWrite,
+    isLinked,
+    syncStatus,
+    cachedContacts,
+  } = loaderData
   const actionData = useActionData<typeof action>()
   const [addingGift, setAddingGift] = useState(false)
   const [addingAvailability, setAddingAvailability] = useState(false)
@@ -207,6 +265,147 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
     null,
   )
   const [addingNote, setAddingNote] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteFromGoogle, setDeleteFromGoogle] = useState(false)
+
+  // Google sync state
+  const [showLinkDialog, setShowLinkDialog] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [pendingDiffs, setPendingDiffs] = useState<FieldDiff[] | null>(null)
+  const [showDiffDialog, setShowDiffDialog] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  // Background sync-on-view for stale linked friends
+  useEffect(() => {
+    if (syncStatus !== 'stale' || !isLinked) return
+
+    let cancelled = false
+
+    async function backgroundSync() {
+      try {
+        const res = await fetch('/api/google-contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            intent: 'sync-friend',
+            friendId: friend.id,
+          }),
+        })
+        if (cancelled) return
+        const result = await res.json()
+
+        if (result.status === 'changes-detected' && result.diffs?.length > 0) {
+          setPendingDiffs(result.diffs)
+        } else if (result.error === 'google-auth-expired') {
+          setSyncError('Google connection expired. Reconnect on Profile page.')
+        }
+      } catch {
+        // Silently fail background sync
+      }
+    }
+
+    backgroundSync()
+    return () => {
+      cancelled = true
+    }
+  }, [syncStatus, isLinked, friend.id])
+
+  async function handleManualSync() {
+    setSyncing(true)
+    setSyncError(null)
+    try {
+      const res = await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'sync-friend',
+          friendId: friend.id,
+        }),
+      })
+      const result = await res.json()
+
+      if (result.status === 'changes-detected' && result.diffs?.length > 0) {
+        setPendingDiffs(result.diffs)
+      } else if (result.status === 'unlinked') {
+        window.location.reload()
+      } else if (result.error === 'google-auth-expired') {
+        setSyncError('Google connection expired. Reconnect on Profile page.')
+      }
+    } catch {
+      setSyncError('Sync failed. Try again later.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  async function handleLink(resourceName: string) {
+    setShowLinkDialog(false)
+    try {
+      await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'link',
+          friendId: friend.id,
+          resourceName,
+        }),
+      })
+      window.location.reload()
+    } catch {
+      // Silently fail
+    }
+  }
+
+  async function handleUnlink() {
+    if (!confirm('Unlink this friend from their Google contact?')) return
+    try {
+      await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'unlink',
+          friendId: friend.id,
+        }),
+      })
+      window.location.reload()
+    } catch {
+      // Silently fail
+    }
+  }
+
+  async function handleApplyDiffs(
+    resolutions: Array<{
+      field: string
+      action: 'use-google' | 'keep-app' | 'push-to-google' | 'skip'
+      value?: string
+    }>,
+  ) {
+    setShowDiffDialog(false)
+    setPendingDiffs(null)
+    try {
+      await fetch('/api/google-contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'resolve-diffs',
+          friendId: friend.id,
+          resolutions,
+        }),
+      })
+      window.location.reload()
+    } catch {
+      // Silently fail
+    }
+  }
+
+  // Compute suggested contacts for the link dialog
+  const suggestedContacts = cachedContacts.filter(
+    c =>
+      !c.linkedFriendId &&
+      c.suggestedFriendId === friend.id &&
+      c.suggestedConfidence >= 0.5,
+  )
+  const unlinkableContacts = cachedContacts.filter(c => !c.linkedFriendId)
 
   const otherFriends = allFriends.filter(f => f.id !== friend.id)
 
@@ -230,12 +429,23 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
       {/* Back link */}
       <BackLink to="/friends">Back to Friends</BackLink>
 
+      {/* Sync diff banner */}
+      {pendingDiffs && pendingDiffs.length > 0 && !showDiffDialog && (
+        <SyncDiffBanner
+          friendName={friend.name}
+          diffCount={pendingDiffs.length}
+          onReview={() => setShowDiffDialog(true)}
+          onDismiss={() => setPendingDiffs(null)}
+        />
+      )}
+
       {/* Profile header */}
       <div className="rounded-xl border border-border-light bg-card p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <Avatar
               name={friend.name}
+              src={friend.photo ? `/api/photos/${friend.photo}` : undefined}
               size="lg"
               color={friend.tierColor || undefined}
             />
@@ -323,29 +533,18 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                 Edit
               </Link>
             </Button>
-            <Form
-              method="post"
-              action={`/friends/${friend.id}/delete`}
-              onSubmit={e => {
-                if (
-                  !confirm(
-                    `Are you sure you want to delete ${friend.name}? This cannot be undone.`,
-                  )
-                ) {
-                  e.preventDefault()
-                }
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={() => {
+                setDeleteFromGoogle(false)
+                setShowDeleteConfirm(true)
               }}
             >
-              <Button
-                variant="outline"
-                size="sm"
-                type="submit"
-                className="text-destructive border-destructive/30 hover:bg-destructive/10"
-              >
-                <Trash2 size={14} className="mr-2" />
-                Delete
-              </Button>
-            </Form>
+              <Trash2 size={14} className="mr-2" />
+              Delete
+            </Button>
           </div>
         </div>
 
@@ -368,6 +567,53 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
               reminder={friend.careModeReminder}
               startedAt={friend.careModeStartedAt}
             />
+          </div>
+        )}
+
+        {/* Google Contacts link/sync */}
+        {hasGoogleContacts && (
+          <div className="mt-4 flex items-center gap-3 text-sm">
+            {isLinked ? (
+              <>
+                <span className="flex items-center gap-1.5 text-muted-foreground">
+                  <GoogleIcon className="size-3.5" />
+                  Linked to Google Contact
+                </span>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={handleManualSync}
+                  disabled={syncing}
+                >
+                  <RefreshCw
+                    size={12}
+                    className={`mr-1 ${syncing ? 'animate-spin' : ''}`}
+                  />
+                  {syncing ? 'Syncing...' : 'Sync'}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={handleUnlink}
+                >
+                  <Link2Off size={12} className="mr-1" />
+                  Unlink
+                </Button>
+                {syncError && (
+                  <span className="text-xs text-destructive">{syncError}</span>
+                )}
+              </>
+            ) : (
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => setShowLinkDialog(true)}
+              >
+                <Link2 size={12} className="mr-1" />
+                Link to Google Contact
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -955,6 +1201,89 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
           </p>
         ) : null}
       </SectionCard>
+
+      {/* Google Contact Link Dialog */}
+      {showLinkDialog && (
+        <GoogleContactLinkDialog
+          open={showLinkDialog}
+          friendName={friend.name}
+          contacts={unlinkableContacts}
+          suggestedContacts={suggestedContacts}
+          onLink={handleLink}
+          onCancel={() => setShowLinkDialog(false)}
+        />
+      )}
+
+      {/* Sync Diff Dialog */}
+      {showDiffDialog && pendingDiffs && (
+        <SyncDiffDialog
+          open={showDiffDialog}
+          friendName={friend.name}
+          diffs={pendingDiffs}
+          hasGoogleWrite={hasGoogleWrite}
+          onApply={handleApplyDiffs}
+          onCancel={() => {
+            setShowDiffDialog(false)
+          }}
+        />
+      )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={isOpen => !isOpen && setShowDeleteConfirm(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {friend.name}?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This action cannot be undone. All data associated with {friend.name}{' '}
+            will be permanently removed.
+          </p>
+          {isLinked && hasGoogleWrite && (
+            <label className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={deleteFromGoogle}
+                onChange={e => setDeleteFromGoogle(e.target.checked)}
+                className="mt-0.5 accent-destructive"
+              />
+              <div>
+                <span className="text-sm font-medium text-destructive">
+                  Also delete from Google Contacts
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  This permanently deletes the contact from your Google account.
+                </p>
+              </div>
+            </label>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Form
+              method="post"
+              action={`/friends/${friend.id}/delete`}
+              onSubmit={() => setShowDeleteConfirm(false)}
+            >
+              {deleteFromGoogle && (
+                <input type="hidden" name="deleteFromGoogle" value="true" />
+              )}
+              <Button type="submit" variant="destructive">
+                <Trash2 size={14} className="mr-2" />
+                Delete{deleteFromGoogle ? ' from both' : ''}
+              </Button>
+            </Form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

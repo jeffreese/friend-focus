@@ -121,6 +121,9 @@ export const friend = sqliteTable('friend', {
     () => closenessTier.id,
     { onDelete: 'set null' },
   ),
+  googleContactResourceName: text('google_contact_resource_name'),
+  googleContactEtag: text('google_contact_etag'),
+  lastGoogleSyncAt: text('last_google_sync_at'),
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
@@ -314,6 +317,54 @@ export const eventInvitation = sqliteTable(
     uniqueIndex('event_invitation_unique').on(table.eventId, table.friendId),
   ],
 )
+
+// ─── Google Contacts Cache ──────────────────────────────────────────────────
+
+export const googleContactCache = sqliteTable(
+  'google_contact_cache',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    resourceName: text('resource_name').notNull(),
+    displayName: text('display_name'),
+    email: text('email'),
+    phone: text('phone'),
+    address: text('address'),
+    photoUrl: text('photo_url'),
+    etag: text('etag'),
+    rawJson: text('raw_json'),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    fetchedAt: integer('fetched_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [
+    uniqueIndex('google_contact_cache_user_resource').on(
+      table.userId,
+      table.resourceName,
+    ),
+  ],
+)
+
+// ─── User Google Sync Settings ──────────────────────────────────────────────
+
+export const userGoogleSync = sqliteTable('user_google_sync', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  googleContactsSyncToken: text('google_contacts_sync_token'),
+  lastBulkSyncAt: integer('last_bulk_sync_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+})
 
 // ─── Notes / Journal ─────────────────────────────────────────────────────────
 

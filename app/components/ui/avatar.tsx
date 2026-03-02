@@ -1,10 +1,11 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import type * as React from 'react'
+import { useState } from 'react'
 
 import { cn } from '~/lib/utils'
 
 const avatarVariants = cva(
-  'inline-flex items-center justify-center rounded-full font-semibold shrink-0',
+  'inline-flex items-center justify-center rounded-full font-semibold shrink-0 overflow-hidden',
   {
     variants: {
       size: {
@@ -31,16 +32,20 @@ function getInitials(name: string): string {
 
 function Avatar({
   name,
+  src,
   size,
   color,
   className,
   ...props
 }: {
   name: string
+  src?: string | null
   color?: string
 } & VariantProps<typeof avatarVariants> &
   Omit<React.ComponentProps<'div'>, 'children'>) {
   const initials = getInitials(name)
+  const [imgError, setImgError] = useState(false)
+  const showImage = !!src && !imgError
 
   return (
     <div
@@ -49,13 +54,22 @@ function Avatar({
       aria-label={name}
       className={cn(
         avatarVariants({ size }),
-        color ? 'text-white' : 'bg-primary/10 text-primary',
+        !showImage && (color ? 'text-white' : 'bg-primary/10 text-primary'),
         className,
       )}
-      style={color ? { backgroundColor: color } : undefined}
+      style={!showImage && color ? { backgroundColor: color } : undefined}
       {...props}
     >
-      {initials}
+      {showImage ? (
+        <img
+          src={src!}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        initials
+      )}
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
 import { and, eq } from 'drizzle-orm'
+import { useState } from 'react'
 import { Form, useActionData, useLoaderData, useNavigation } from 'react-router'
+import { GoogleScopeUpgrade } from '~/components/google-scope-upgrade'
 import { Button } from '~/components/ui/button'
 import { FieldError } from '~/components/ui/field-error'
 import { FormError } from '~/components/ui/form-error'
@@ -16,6 +18,11 @@ import { APP_NAME } from '~/config'
 import { db } from '~/db/index.server'
 import { account } from '~/db/schema'
 import { auth, isGoogleEnabled } from '~/lib/auth.server'
+import {
+  hasContactsReadScope,
+  hasContactsWriteScope,
+} from '~/lib/google-contacts.server'
+import { clearGoogleContactData } from '~/lib/google-contacts-sync.server'
 import {
   changePasswordSchema,
   setPasswordSchema,
@@ -53,6 +60,16 @@ export async function loader({ request }: Route.LoaderArgs) {
     )
     .get()
 
+  // Check Google Contacts scope levels
+  let contactsPermission: 'none' | 'read' | 'read-write' = 'none'
+  if (googleConnected) {
+    if (hasContactsWriteScope(session.user.id)) {
+      contactsPermission = 'read-write'
+    } else if (hasContactsReadScope(session.user.id)) {
+      contactsPermission = 'read'
+    }
+  }
+
   return {
     user: {
       name: session.user.name,
@@ -61,6 +78,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     hasPassword,
     googleConnected,
     isGoogleEnabled,
+    contactsPermission,
   }
 }
 
@@ -84,6 +102,9 @@ export async function action({ request }: Route.ActionArgs) {
     if (!hasPassword) {
       return { error: 'You must set a password before disconnecting Google.' }
     }
+
+    // Clean up all Google contact data before disconnecting
+    clearGoogleContactData(session.user.id)
 
     db.delete(account)
       .where(
@@ -169,10 +190,12 @@ export default function Profile() {
     hasPassword,
     googleConnected,
     isGoogleEnabled: googleEnabled,
+    contactsPermission,
   } = useLoaderData<typeof loader>()
   const actionData = useActionData<typeof action>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
+  const [showScopeUpgrade, setShowScopeUpgrade] = useState(false)
 
   const isSuccess = actionData && 'success' in actionData
   const nameSuccess = isSuccess && actionData.success === 'name'
@@ -445,9 +468,44 @@ export default function Profile() {
                 locked out.
               </p>
             )}
+
+            {googleConnected && contactsPermission !== 'none' && (
+              <div className="mt-3 pt-3 border-t border-border-light">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Contacts permission:{' '}
+                      <span className="font-medium text-foreground">
+                        {contactsPermission === 'read-write'
+                          ? 'Read & Write'
+                          : 'Read Only'}
+                      </span>
+                    </p>
+                  </div>
+                  {contactsPermission === 'read' && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() => setShowScopeUpgrade(true)}
+                    >
+                      Upgrade to Read & Write
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </SectionCard>
       </div>
+
+      {/* Google scope upgrade dialog */}
+      {showScopeUpgrade && (
+        <GoogleScopeUpgrade
+          open={showScopeUpgrade}
+          onCancel={() => setShowScopeUpgrade(false)}
+          callbackURL="/profile"
+        />
+      )}
     </div>
   )
 }
