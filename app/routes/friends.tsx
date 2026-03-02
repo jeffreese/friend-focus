@@ -152,6 +152,7 @@ export default function Friends({ loaderData }: Route.ComponentProps) {
       {activeTab === 'contacts' && hasGoogleContacts ? (
         <GoogleContactsList
           contacts={cachedContacts}
+          friends={friends}
           lastBulkSyncAt={lastBulkSyncAt}
           hasGoogleWrite={hasGoogleWrite}
         />

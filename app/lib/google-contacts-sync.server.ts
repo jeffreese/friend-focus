@@ -310,8 +310,10 @@ export function getCachedContactsWithStatus(
         }
       }
 
-      // Only suggest if above threshold
-      if (bestScore < 0.5) {
+      // Only suggest if above lower threshold (0.3).
+      // Confidence >= 0.5 = suggested match, 0.3–0.5 = possible match.
+      // The UI layer differentiates using the confidence value.
+      if (bestScore < 0.3) {
         suggestedFriendId = null
         suggestedFriendName = null
         suggestedConfidence = 0
