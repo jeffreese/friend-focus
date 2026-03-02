@@ -36,5 +36,4 @@ export default [
   route('api/google-contacts', 'routes/api.google-contacts.ts'),
   route('api/photos/:filename', 'routes/api.photos.$filename.ts'),
   route('api/places', 'routes/api.places.ts'),
-  route('api/fix-addresses', 'routes/api.fix-addresses.ts'),
 ] satisfies RouteConfig
