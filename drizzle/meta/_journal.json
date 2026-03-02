@@ -43,6 +43,13 @@
       "when": 1772471256489,
       "tag": "0005_closed_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1772474183047,
+      "tag": "0006_reflective_mandrill",
+      "breakpoints": true
     }
   ]
 }

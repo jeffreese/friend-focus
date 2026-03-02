@@ -52,8 +52,11 @@ import {
   clearGoogleCalendarEventId,
   deleteEvent,
   getEventDetail,
+  getInvitationWithEmail,
+  markCalendarInviteSent,
   removeInvitation,
   setGoogleCalendarEventId,
+  syncCalendarRsvps,
   updateEvent,
   updateInvitation,
 } from '~/lib/event.server'
@@ -61,6 +64,8 @@ import { formatDate } from '~/lib/format'
 import { getFriendOptions } from '~/lib/friend.server'
 import {
   createGoogleCalendarEvent,
+  GoogleCalendarNotFoundError,
+  getGoogleCalendarEvent,
   hasGoogleScopes,
   updateGoogleCalendarEvent,
 } from '~/lib/google.server'
@@ -88,7 +93,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const session = await requireSession(request)
   const userId = session.user.id
 
-  const event = getEventDetail(params.id, userId)
+  let event = getEventDetail(params.id, userId)
   if (!event) throw new Response('Not Found', { status: 404 })
 
   const friends = getFriendOptions(userId)
@@ -99,6 +104,31 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const hasCalendarAccess =
     isGoogleEnabled &&
     hasGoogleScopes(userId, ['https://www.googleapis.com/auth/calendar.events'])
+
+  // Best-effort RSVP sync from Google Calendar
+  if (event.googleCalendarEventId && hasCalendarAccess) {
+    try {
+      const gcalEvent = await getGoogleCalendarEvent(
+        userId,
+        event.googleCalendarEventId,
+      )
+      if (gcalEvent.attendees) {
+        const updated = syncCalendarRsvps(
+          event.invitations,
+          gcalEvent.attendees,
+        )
+        if (updated > 0) {
+          event = getEventDetail(params.id, userId)!
+        }
+      }
+    } catch (err) {
+      if (err instanceof GoogleCalendarNotFoundError) {
+        clearGoogleCalendarEventId(params.id, userId)
+        event = getEventDetail(params.id, userId)!
+      }
+      // Other errors silently swallowed — don't block page load
+    }
+  }
 
   const placesEnabled = isPlacesEnabled()
 
@@ -135,11 +165,23 @@ export async function action({ request, params }: Route.ActionArgs) {
           ])
         ) {
           try {
+            // Fetch existing attendees so the PUT doesn't strip them
+            const gcalEvent = await getGoogleCalendarEvent(
+              userId,
+              updatedEvent.googleCalendarEventId,
+            )
             const payload = buildCalendarEventPayload(updatedEvent)
+            if (gcalEvent.attendees) {
+              payload.attendees = gcalEvent.attendees.map(a => ({
+                email: a.email,
+                ...(a.displayName ? { displayName: a.displayName } : {}),
+              }))
+            }
             await updateGoogleCalendarEvent(
               userId,
               updatedEvent.googleCalendarEventId,
               payload,
+              { sendUpdates: 'none' },
             )
           } catch (err) {
             if (
@@ -243,6 +285,105 @@ export async function action({ request, params }: Route.ActionArgs) {
             err instanceof Error
               ? err.message
               : 'Failed to add to Google Calendar'
+          return { error: message }
+        }
+      }
+      case 'send-calendar-invite': {
+        const invitationId = formData.get('invitationId') as string
+        if (!invitationId) return { error: 'Invitation is required' }
+
+        const inv = getInvitationWithEmail(invitationId)
+        if (!inv?.friendEmail) {
+          return { error: 'This friend has no email address' }
+        }
+
+        const eventDetail = getEventDetail(params.id, userId)
+        if (!eventDetail?.date) {
+          return { error: 'Event must have a date before sending invites' }
+        }
+
+        try {
+          if (!eventDetail.googleCalendarEventId) {
+            // Create calendar event with this guest as the first attendee
+            const payload = buildCalendarEventPayload(eventDetail)
+            payload.attendees = [
+              { email: inv.friendEmail, displayName: inv.friendName },
+            ]
+            const result = await createGoogleCalendarEvent(userId, payload, {
+              sendUpdates: 'all',
+            })
+            setGoogleCalendarEventId(
+              params.id,
+              result.id,
+              result.htmlLink,
+              userId,
+            )
+          } else {
+            // Fetch current attendees, merge in new guest, update
+            let existingAttendees: Array<{
+              email: string
+              displayName?: string
+            }> = []
+            try {
+              const gcalEvent = await getGoogleCalendarEvent(
+                userId,
+                eventDetail.googleCalendarEventId,
+              )
+              existingAttendees = (gcalEvent.attendees || []).map(a => ({
+                email: a.email,
+                ...(a.displayName ? { displayName: a.displayName } : {}),
+              }))
+            } catch (err) {
+              if (err instanceof GoogleCalendarNotFoundError) {
+                // Calendar event was deleted — recreate with this guest
+                const payload = buildCalendarEventPayload(eventDetail)
+                payload.attendees = [
+                  { email: inv.friendEmail, displayName: inv.friendName },
+                ]
+                const result = await createGoogleCalendarEvent(
+                  userId,
+                  payload,
+                  { sendUpdates: 'all' },
+                )
+                setGoogleCalendarEventId(
+                  params.id,
+                  result.id,
+                  result.htmlLink,
+                  userId,
+                )
+                markCalendarInviteSent(invitationId)
+                return { ok: true }
+              }
+              throw err
+            }
+
+            const alreadyAdded = existingAttendees.some(
+              a => a.email.toLowerCase() === inv.friendEmail!.toLowerCase(),
+            )
+            const updatedAttendees = alreadyAdded
+              ? existingAttendees
+              : [
+                  ...existingAttendees,
+                  { email: inv.friendEmail, displayName: inv.friendName },
+                ]
+
+            const payload = buildCalendarEventPayload(eventDetail)
+            payload.attendees = updatedAttendees
+            await updateGoogleCalendarEvent(
+              userId,
+              eventDetail.googleCalendarEventId,
+              payload,
+              { sendUpdates: 'all' },
+            )
+          }
+
+          markCalendarInviteSent(invitationId)
+          return { ok: true }
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Failed to send calendar invite'
           return { error: message }
         }
       }
@@ -590,7 +731,12 @@ export default function EventDetail({
                 </TableHeader>
                 <TableBody>
                   {sortedInvitations.map(inv => (
-                    <GuestRow key={inv.id} invitation={inv} />
+                    <GuestRow
+                      key={inv.id}
+                      invitation={inv}
+                      hasCalendarAccess={hasCalendarAccess}
+                      hasDate={!!event.date}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -598,7 +744,12 @@ export default function EventDetail({
             cards={
               <div className="divide-y divide-border-light">
                 {sortedInvitations.map(inv => (
-                  <GuestCard key={inv.id} invitation={inv} />
+                  <GuestCard
+                    key={inv.id}
+                    invitation={inv}
+                    hasCalendarAccess={hasCalendarAccess}
+                    hasDate={!!event.date}
+                  />
                 ))}
               </div>
             }
@@ -960,17 +1111,23 @@ function EventEditForm({
 
 function GuestRow({
   invitation,
+  hasCalendarAccess,
+  hasDate,
 }: {
   invitation: {
     id: string
     friendId: string
     friendName: string
+    friendEmail: string | null
     tierLabel: string | null
     tierColor: string | null
     tierSortOrder: number | null
     status: string
     attended: boolean | null
+    calendarInviteSent: boolean
   }
+  hasCalendarAccess: boolean
+  hasDate: boolean
 }) {
   return (
     <TableRow className="group">
@@ -1035,19 +1192,53 @@ function GuestRow({
         </Form>
       </TableCell>
       <TableCell className="text-right">
-        <InlineConfirmDelete>
-          <Form method="post" className="inline">
-            <input type="hidden" name="intent" value="remove-guest" />
-            <input type="hidden" name="invitationId" value={invitation.id} />
-            <button
-              type="submit"
-              className="text-destructive hover:text-destructive/80 transition-colors p-1"
-              aria-label="Confirm delete"
-            >
-              <Check size={14} />
-            </button>
-          </Form>
-        </InlineConfirmDelete>
+        <div className="flex items-center justify-end gap-1">
+          {hasCalendarAccess &&
+            hasDate &&
+            invitation.friendEmail &&
+            (invitation.calendarInviteSent ? (
+              <span className="text-xs text-success flex items-center gap-1 px-2">
+                <Check size={12} />
+                Invite Sent
+              </span>
+            ) : (
+              <Form method="post" className="inline">
+                <input
+                  type="hidden"
+                  name="intent"
+                  value="send-calendar-invite"
+                />
+                <input
+                  type="hidden"
+                  name="invitationId"
+                  value={invitation.id}
+                />
+                <SubmitButton
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  formIntent="send-calendar-invite"
+                  pendingText="Sending..."
+                >
+                  <CalendarPlus size={14} className="mr-1" />
+                  Send Invite
+                </SubmitButton>
+              </Form>
+            ))}
+          <InlineConfirmDelete>
+            <Form method="post" className="inline">
+              <input type="hidden" name="intent" value="remove-guest" />
+              <input type="hidden" name="invitationId" value={invitation.id} />
+              <button
+                type="submit"
+                className="text-destructive hover:text-destructive/80 transition-colors p-1"
+                aria-label="Confirm delete"
+              >
+                <Check size={14} />
+              </button>
+            </Form>
+          </InlineConfirmDelete>
+        </div>
       </TableCell>
     </TableRow>
   )
@@ -1055,17 +1246,23 @@ function GuestRow({
 
 function GuestCard({
   invitation,
+  hasCalendarAccess,
+  hasDate,
 }: {
   invitation: {
     id: string
     friendId: string
     friendName: string
+    friendEmail: string | null
     tierLabel: string | null
     tierColor: string | null
     tierSortOrder: number | null
     status: string
     attended: boolean | null
+    calendarInviteSent: boolean
   }
+  hasCalendarAccess: boolean
+  hasDate: boolean
 }) {
   return (
     <div className="p-4">
@@ -1106,7 +1303,7 @@ function GuestCard({
           </InlineConfirmDelete>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Form method="post" className="inline">
           <input type="hidden" name="intent" value="update-rsvp" />
           <input type="hidden" name="invitationId" value={invitation.id} />
@@ -1139,6 +1336,30 @@ function GuestCard({
             <option value="false">No</option>
           </Select>
         </Form>
+        {hasCalendarAccess &&
+          hasDate &&
+          invitation.friendEmail &&
+          (invitation.calendarInviteSent ? (
+            <span className="text-xs text-success flex items-center gap-1">
+              <Check size={12} />
+              Invite Sent
+            </span>
+          ) : (
+            <Form method="post" className="inline">
+              <input type="hidden" name="intent" value="send-calendar-invite" />
+              <input type="hidden" name="invitationId" value={invitation.id} />
+              <SubmitButton
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                formIntent="send-calendar-invite"
+                pendingText="Sending..."
+              >
+                <CalendarPlus size={14} className="mr-1" />
+                Send Invite
+              </SubmitButton>
+            </Form>
+          ))}
       </div>
     </div>
   )

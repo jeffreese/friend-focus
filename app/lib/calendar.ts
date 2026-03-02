@@ -1,28 +1,22 @@
+import type { GoogleCalendarEventInput } from '~/lib/google.server'
+
 export interface CalendarEventInput {
   name: string
   activityName: string | null
   date: string | null
   time: string | null
   location: string | null
-  invitations: Array<{ friendName: string; status: string }>
 }
 
 /**
  * Build a Google Calendar API event payload from an app event.
  */
-export function buildCalendarEventPayload(eventDetail: CalendarEventInput) {
-  const { name, location, date, time, activityName, invitations } = eventDetail
+export function buildCalendarEventPayload(
+  eventDetail: CalendarEventInput,
+): GoogleCalendarEventInput {
+  const { name, location, date, time, activityName } = eventDetail
 
-  const lines: string[] = []
-  if (activityName) lines.push(`Activity: ${activityName}`)
-  const attending = invitations.filter(i => i.status === 'attending')
-  if (attending.length > 0) {
-    lines.push(`\nGuest list (${attending.length}):`)
-    for (const inv of attending) {
-      lines.push(`  - ${inv.friendName}`)
-    }
-  }
-  const description = lines.length > 0 ? lines.join('\n') : undefined
+  const description = activityName ? `Activity: ${activityName}` : undefined
 
   if (time && date) {
     const [h, m] = time.split(':').map(Number)
