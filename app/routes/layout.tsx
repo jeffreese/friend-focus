@@ -153,6 +153,7 @@ export default function Layout() {
         <SheetContent
           side="left"
           showCloseButton={false}
+          title="Navigation"
           className="w-64 gap-0 p-0 bg-sidebar border-none"
         >
           <SidebarNav user={user} onLinkClick={() => setMobileNavOpen(false)} />
