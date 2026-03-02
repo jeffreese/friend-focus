@@ -1,0 +1,1 @@
+ALTER TABLE `event_invitation` ADD `calendar_invite_sent` integer DEFAULT false NOT NULL;

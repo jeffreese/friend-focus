@@ -307,6 +307,9 @@ export const eventInvitation = sqliteTable(
     mustExclude: integer('must_exclude', { mode: 'boolean' })
       .notNull()
       .default(false),
+    calendarInviteSent: integer('calendar_invite_sent', { mode: 'boolean' })
+      .notNull()
+      .default(false),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .$defaultFn(() => new Date()),

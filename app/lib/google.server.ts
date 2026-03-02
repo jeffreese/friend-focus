@@ -131,11 +131,23 @@ export interface GoogleCalendarEventInput {
   location?: string
   start: { date?: string; dateTime?: string; timeZone?: string }
   end: { date?: string; dateTime?: string; timeZone?: string }
+  attendees?: Array<{ email: string; displayName?: string }>
 }
 
 export interface GoogleCalendarEventResult {
   id: string
   htmlLink: string
+}
+
+export interface GoogleCalendarAttendee {
+  email: string
+  displayName?: string
+  responseStatus: 'needsAction' | 'declined' | 'tentative' | 'accepted'
+}
+
+interface GoogleCalendarEventData {
+  id: string
+  attendees?: GoogleCalendarAttendee[]
 }
 
 /**
@@ -144,6 +156,7 @@ export interface GoogleCalendarEventResult {
 export async function createGoogleCalendarEvent(
   userId: string,
   calendarEvent: GoogleCalendarEventInput,
+  options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' },
 ): Promise<GoogleCalendarEventResult> {
   const accessToken = await getValidGoogleAccessToken(userId)
   if (!accessToken) {
@@ -152,17 +165,21 @@ export async function createGoogleCalendarEvent(
     )
   }
 
-  const response = await fetch(
+  const url = new URL(
     'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(calendarEvent),
-    },
   )
+  if (options?.sendUpdates) {
+    url.searchParams.set('sendUpdates', options.sendUpdates)
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(calendarEvent),
+  })
 
   if (!response.ok) {
     const errorBody = await response.text()
@@ -183,7 +200,51 @@ export async function updateGoogleCalendarEvent(
   userId: string,
   googleCalendarEventId: string,
   calendarEvent: GoogleCalendarEventInput,
+  options?: { sendUpdates?: 'all' | 'externalOnly' | 'none' },
 ): Promise<void> {
+  const accessToken = await getValidGoogleAccessToken(userId)
+  if (!accessToken) {
+    throw new Error(
+      'Google account not connected or token refresh failed. Try reconnecting Google on your Profile page.',
+    )
+  }
+
+  const url = new URL(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(googleCalendarEventId)}`,
+  )
+  if (options?.sendUpdates) {
+    url.searchParams.set('sendUpdates', options.sendUpdates)
+  }
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(calendarEvent),
+  })
+
+  if (response.status === 404 || response.status === 410) {
+    throw new GoogleCalendarNotFoundError(googleCalendarEventId)
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.text()
+    throw new Error(
+      `Google Calendar API error (${response.status}): ${errorBody}`,
+    )
+  }
+}
+
+/**
+ * Fetch a Google Calendar event to read current attendees and their RSVP status.
+ * Throws GoogleCalendarNotFoundError if the event was deleted on Google's side.
+ */
+export async function getGoogleCalendarEvent(
+  userId: string,
+  googleCalendarEventId: string,
+): Promise<GoogleCalendarEventData> {
   const accessToken = await getValidGoogleAccessToken(userId)
   if (!accessToken) {
     throw new Error(
@@ -194,12 +255,7 @@ export async function updateGoogleCalendarEvent(
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(googleCalendarEventId)}`,
     {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(calendarEvent),
+      headers: { Authorization: `Bearer ${accessToken}` },
     },
   )
 
@@ -213,4 +269,6 @@ export async function updateGoogleCalendarEvent(
       `Google Calendar API error (${response.status}): ${errorBody}`,
     )
   }
+
+  return response.json() as Promise<GoogleCalendarEventData>
 }

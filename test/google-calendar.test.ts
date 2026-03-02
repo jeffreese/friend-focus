@@ -13,7 +13,6 @@ function makeEvent(
     date: '2026-07-15',
     time: null,
     location: null,
-    invitations: [],
     ...overrides,
   }
 }
@@ -69,28 +68,10 @@ describe('buildCalendarEventPayload', () => {
     const payload = buildCalendarEventPayload(
       makeEvent({ activityName: 'Hiking' }),
     )
-    expect(payload.description).toContain('Activity: Hiking')
+    expect(payload.description).toBe('Activity: Hiking')
   })
 
-  it('includes only attending guests in description', () => {
-    const payload = buildCalendarEventPayload(
-      makeEvent({
-        invitations: [
-          { friendName: 'Alice', status: 'attending' },
-          { friendName: 'Bob', status: 'declined' },
-          { friendName: 'Carol', status: 'attending' },
-          { friendName: 'Dave', status: 'invited' },
-        ],
-      }),
-    )
-    expect(payload.description).toContain('Alice')
-    expect(payload.description).toContain('Carol')
-    expect(payload.description).not.toContain('Bob')
-    expect(payload.description).not.toContain('Dave')
-    expect(payload.description).toContain('Guest list (2)')
-  })
-
-  it('omits description when no activity and no attending guests', () => {
+  it('omits description when no activity', () => {
     const payload = buildCalendarEventPayload(makeEvent())
     expect(payload.description).toBeUndefined()
   })

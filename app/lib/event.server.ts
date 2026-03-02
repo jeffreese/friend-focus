@@ -8,8 +8,11 @@ import {
   friend,
   note,
 } from '~/db/schema'
+import { computeCalendarRsvpUpdates } from './calendar-rsvp'
 import type { EventInput } from './schemas'
 import { normalizeEmpty } from './utils'
+
+export type { CalendarRsvpInput, GoogleAttendeeInput } from './calendar-rsvp'
 
 export function getEvents(userId: string, status?: string) {
   const conditions = status
@@ -88,11 +91,13 @@ export function getEventDetail(id: string, userId: string) {
       id: eventInvitation.id,
       friendId: eventInvitation.friendId,
       friendName: friend.name,
+      friendEmail: friend.email,
       tierLabel: closenessTier.label,
       tierColor: closenessTier.color,
       tierSortOrder: closenessTier.sortOrder,
       status: eventInvitation.status,
       attended: eventInvitation.attended,
+      calendarInviteSent: eventInvitation.calendarInviteSent,
       mustInvite: eventInvitation.mustInvite,
       mustExclude: eventInvitation.mustExclude,
       createdAt: eventInvitation.createdAt,
@@ -203,4 +208,48 @@ export function clearGoogleCalendarEventId(eventId: string, userId: string) {
     })
     .where(and(eq(event.id, eventId), eq(event.userId, userId)))
     .run()
+}
+
+export function getInvitationWithEmail(invitationId: string) {
+  return db
+    .select({
+      id: eventInvitation.id,
+      friendId: eventInvitation.friendId,
+      friendName: friend.name,
+      friendEmail: friend.email,
+      calendarInviteSent: eventInvitation.calendarInviteSent,
+      status: eventInvitation.status,
+      eventId: eventInvitation.eventId,
+    })
+    .from(eventInvitation)
+    .innerJoin(friend, eq(eventInvitation.friendId, friend.id))
+    .where(eq(eventInvitation.id, invitationId))
+    .get()
+}
+
+export function markCalendarInviteSent(invitationId: string) {
+  db.update(eventInvitation)
+    .set({ calendarInviteSent: true, updatedAt: new Date() })
+    .where(eq(eventInvitation.id, invitationId))
+    .run()
+}
+
+/**
+ * Sync RSVP statuses from Google Calendar attendee responses to local
+ * invitations. Returns the number of invitations updated.
+ */
+export function syncCalendarRsvps(
+  invitations: Array<{
+    id: string
+    friendEmail: string | null
+    calendarInviteSent: boolean
+    status: string
+  }>,
+  googleAttendees: Array<{ email: string; responseStatus: string }>,
+): number {
+  const updates = computeCalendarRsvpUpdates(invitations, googleAttendees)
+  for (const { invitationId, newStatus } of updates) {
+    updateInvitation(invitationId, { status: newStatus })
+  }
+  return updates.length
 }
