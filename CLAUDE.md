@@ -127,6 +127,10 @@ access, auth config, and session helpers.
   `SubmitButton`, `BackLink`, `DataTable`, etc.). If a reusable pattern
   emerges that doesn't have a component yet, create one in `app/components/ui/`.
   The goal is DRY, consistent UI that's easy to theme and modify globally.
+- **NEVER use browser-native `confirm()`, `alert()`, or `prompt()`.** Use
+  `ConfirmDialog` from `~/components/ui/confirm-dialog` for confirmations
+  and `InlineConfirmDelete` for inline delete actions. All user-facing
+  dialogs must use our component library for a consistent experience.
 
 ### Route Conventions
 - Loaders fetch data, actions handle mutations

@@ -31,6 +31,7 @@ import { SyncDiffBanner, SyncDiffDialog } from '~/components/google-sync-diff'
 import { Avatar } from '~/components/ui/avatar'
 import { BackLink } from '~/components/ui/back-link'
 import { Button } from '~/components/ui/button'
+import { ConfirmDialog } from '~/components/ui/confirm-dialog'
 import {
   Dialog,
   DialogClose,
@@ -283,6 +284,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
 
   // Google sync state
   const [showLinkDialog, setShowLinkDialog] = useState(false)
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [pendingDiffs, setPendingDiffs] = useState<FieldDiff[] | null>(null)
   const [showDiffDialog, setShowDiffDialog] = useState(false)
@@ -424,7 +426,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
   }
 
   async function handleUnlink() {
-    if (!confirm('Unlink this friend from their Google contact?')) return
+    setShowUnlinkConfirm(false)
     try {
       await fetch('/api/google-contacts', {
         method: 'POST',
@@ -652,7 +654,7 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
                   size="xs"
                   variant="ghost"
                   className="text-muted-foreground"
-                  onClick={handleUnlink}
+                  onClick={() => setShowUnlinkConfirm(true)}
                 >
                   <Link2Off size={12} className="mr-1" />
                   Unlink
@@ -1284,6 +1286,17 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
           }}
         />
       )}
+
+      {/* Unlink confirmation dialog */}
+      <ConfirmDialog
+        open={showUnlinkConfirm}
+        title="Unlink Google Contact?"
+        description={`This will remove the link between ${friend.name} and their Google contact. No data will be deleted.`}
+        confirmText="Unlink"
+        variant="destructive"
+        onConfirm={handleUnlink}
+        onCancel={() => setShowUnlinkConfirm(false)}
+      />
 
       {/* Delete confirmation dialog */}
       <Dialog
