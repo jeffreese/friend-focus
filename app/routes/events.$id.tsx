@@ -485,6 +485,12 @@ export default function EventDetail({
   const [showHiddenRecs, setShowHiddenRecs] = useState(false)
   const hasHiddenRecs = recommendations.some(r => r.tierHidden)
 
+  // Resolve timezone on the client to avoid SSR sending the server's TZ
+  const [clientTimeZone, setClientTimeZone] = useState('')
+  useEffect(() => {
+    setClientTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  }, [])
+
   // Close edit form when update succeeds
   useEffect(() => {
     if (actionData && 'ok' in actionData) {
@@ -576,6 +582,7 @@ export default function EventDetail({
           event={event}
           activities={activities}
           placesEnabled={placesEnabled}
+          clientTimeZone={clientTimeZone}
           onCancel={() => setEditing(false)}
         />
       ) : (
@@ -618,7 +625,7 @@ export default function EventDetail({
                     <input
                       type="hidden"
                       name="timeZone"
-                      value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                      value={clientTimeZone}
                     />
                     <SubmitButton
                       variant="outline"
@@ -761,6 +768,7 @@ export default function EventDetail({
                       invitation={inv}
                       hasCalendarAccess={hasCalendarAccess}
                       hasDate={!!event.date}
+                      clientTimeZone={clientTimeZone}
                     />
                   ))}
                 </TableBody>
@@ -774,6 +782,7 @@ export default function EventDetail({
                     invitation={inv}
                     hasCalendarAccess={hasCalendarAccess}
                     hasDate={!!event.date}
+                    clientTimeZone={clientTimeZone}
                   />
                 ))}
               </div>
@@ -999,6 +1008,7 @@ function EventEditForm({
   event,
   activities,
   placesEnabled,
+  clientTimeZone,
   onCancel,
 }: {
   event: {
@@ -1021,6 +1031,7 @@ function EventEditForm({
   }
   activities: Array<{ id: string; name: string }>
   placesEnabled: boolean
+  clientTimeZone: string
   onCancel: () => void
 }) {
   const defaultDetails: AddressDetails | undefined = event.location
@@ -1041,11 +1052,7 @@ function EventEditForm({
       className="rounded-xl border border-border-light bg-card p-6 mb-6 space-y-4"
     >
       <input type="hidden" name="intent" value="update-event" />
-      <input
-        type="hidden"
-        name="timeZone"
-        value={Intl.DateTimeFormat().resolvedOptions().timeZone}
-      />
+      <input type="hidden" name="timeZone" value={clientTimeZone} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField className="sm:col-span-2">
           <Label htmlFor="edit-name">
@@ -1143,6 +1150,7 @@ function GuestRow({
   invitation,
   hasCalendarAccess,
   hasDate,
+  clientTimeZone,
 }: {
   invitation: {
     id: string
@@ -1158,6 +1166,7 @@ function GuestRow({
   }
   hasCalendarAccess: boolean
   hasDate: boolean
+  clientTimeZone: string
 }) {
   return (
     <TableRow className="group">
@@ -1243,11 +1252,7 @@ function GuestRow({
                   name="invitationId"
                   value={invitation.id}
                 />
-                <input
-                  type="hidden"
-                  name="timeZone"
-                  value={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                />
+                <input type="hidden" name="timeZone" value={clientTimeZone} />
                 <SubmitButton
                   variant="ghost"
                   size="sm"
@@ -1283,6 +1288,7 @@ function GuestCard({
   invitation,
   hasCalendarAccess,
   hasDate,
+  clientTimeZone,
 }: {
   invitation: {
     id: string
@@ -1298,6 +1304,7 @@ function GuestCard({
   }
   hasCalendarAccess: boolean
   hasDate: boolean
+  clientTimeZone: string
 }) {
   return (
     <div className="p-4">
@@ -1383,11 +1390,7 @@ function GuestCard({
             <Form method="post" className="inline">
               <input type="hidden" name="intent" value="send-calendar-invite" />
               <input type="hidden" name="invitationId" value={invitation.id} />
-              <input
-                type="hidden"
-                name="timeZone"
-                value={Intl.DateTimeFormat().resolvedOptions().timeZone}
-              />
+              <input type="hidden" name="timeZone" value={clientTimeZone} />
               <SubmitButton
                 variant="ghost"
                 size="sm"
