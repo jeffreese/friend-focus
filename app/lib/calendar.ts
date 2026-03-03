@@ -6,6 +6,7 @@ export interface CalendarEventInput {
   date: string | null
   time: string | null
   location: string | null
+  timeZone?: string
 }
 
 /**
@@ -14,9 +15,10 @@ export interface CalendarEventInput {
 export function buildCalendarEventPayload(
   eventDetail: CalendarEventInput,
 ): GoogleCalendarEventInput {
-  const { name, location, date, time, activityName } = eventDetail
+  const { name, location, date, time, activityName, timeZone } = eventDetail
 
   const description = activityName ? `Activity: ${activityName}` : undefined
+  const tz = timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone
 
   if (time && date) {
     const [h, m] = time.split(':').map(Number)
@@ -34,8 +36,8 @@ export function buildCalendarEventPayload(
       summary: name,
       description,
       location: location || undefined,
-      start: { dateTime: `${date}T${time}:00` },
-      end: { dateTime: `${endDate}T${endTime}:00` },
+      start: { dateTime: `${date}T${time}:00`, timeZone: tz },
+      end: { dateTime: `${endDate}T${endTime}:00`, timeZone: tz },
     }
   }
 

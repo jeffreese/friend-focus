@@ -34,10 +34,13 @@ describe('buildCalendarEventPayload', () => {
         name: 'Dinner',
         date: '2026-03-15',
         time: '19:00',
+        timeZone: 'America/Denver',
       }),
     )
     expect(payload.start.dateTime).toBe('2026-03-15T19:00:00')
+    expect(payload.start.timeZone).toBe('America/Denver')
     expect(payload.end.dateTime).toBe('2026-03-15T20:00:00')
+    expect(payload.end.timeZone).toBe('America/Denver')
   })
 
   it('handles midnight rollover for end time', () => {
@@ -49,6 +52,7 @@ describe('buildCalendarEventPayload', () => {
       }),
     )
     expect(payload.start.dateTime).toBe('2026-03-15T23:30:00')
+    expect(payload.start.timeZone).toBeDefined()
     expect(payload.end.dateTime).toBe('2026-03-16T00:30:00')
   })
 
