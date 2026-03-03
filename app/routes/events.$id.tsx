@@ -170,7 +170,12 @@ export async function action({ request, params }: Route.ActionArgs) {
               userId,
               updatedEvent.googleCalendarEventId,
             )
-            const payload = buildCalendarEventPayload(updatedEvent)
+            const updateTimeZone =
+              (formData.get('timeZone') as string) || undefined
+            const payload = buildCalendarEventPayload({
+              ...updatedEvent,
+              timeZone: updateTimeZone,
+            })
             if (gcalEvent.attendees) {
               payload.attendees = gcalEvent.attendees.map(a => ({
                 email: a.email,
@@ -271,7 +276,11 @@ export async function action({ request, params }: Route.ActionArgs) {
           return { error: 'Already added to Google Calendar' }
         }
         try {
-          const payload = buildCalendarEventPayload(eventDetail)
+          const timeZone = (formData.get('timeZone') as string) || undefined
+          const payload = buildCalendarEventPayload({
+            ...eventDetail,
+            timeZone,
+          })
           const result = await createGoogleCalendarEvent(userId, payload)
           setGoogleCalendarEventId(
             params.id,
@@ -303,9 +312,14 @@ export async function action({ request, params }: Route.ActionArgs) {
         }
 
         try {
+          const inviteTimeZone =
+            (formData.get('timeZone') as string) || undefined
           if (!eventDetail.googleCalendarEventId) {
             // Create calendar event with this guest as the first attendee
-            const payload = buildCalendarEventPayload(eventDetail)
+            const payload = buildCalendarEventPayload({
+              ...eventDetail,
+              timeZone: inviteTimeZone,
+            })
             payload.attendees = [
               { email: inv.friendEmail, displayName: inv.friendName },
             ]
@@ -336,7 +350,10 @@ export async function action({ request, params }: Route.ActionArgs) {
             } catch (err) {
               if (err instanceof GoogleCalendarNotFoundError) {
                 // Calendar event was deleted — recreate with this guest
-                const payload = buildCalendarEventPayload(eventDetail)
+                const payload = buildCalendarEventPayload({
+                  ...eventDetail,
+                  timeZone: inviteTimeZone,
+                })
                 payload.attendees = [
                   { email: inv.friendEmail, displayName: inv.friendName },
                 ]
@@ -367,7 +384,10 @@ export async function action({ request, params }: Route.ActionArgs) {
                   { email: inv.friendEmail, displayName: inv.friendName },
                 ]
 
-            const payload = buildCalendarEventPayload(eventDetail)
+            const payload = buildCalendarEventPayload({
+              ...eventDetail,
+              timeZone: inviteTimeZone,
+            })
             payload.attendees = updatedAttendees
             await updateGoogleCalendarEvent(
               userId,
@@ -594,6 +614,11 @@ export default function EventDetail({
                       type="hidden"
                       name="intent"
                       value="add-to-calendar"
+                    />
+                    <input
+                      type="hidden"
+                      name="timeZone"
+                      value={Intl.DateTimeFormat().resolvedOptions().timeZone}
                     />
                     <SubmitButton
                       variant="outline"
@@ -1016,6 +1041,11 @@ function EventEditForm({
       className="rounded-xl border border-border-light bg-card p-6 mb-6 space-y-4"
     >
       <input type="hidden" name="intent" value="update-event" />
+      <input
+        type="hidden"
+        name="timeZone"
+        value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField className="sm:col-span-2">
           <Label htmlFor="edit-name">
@@ -1213,6 +1243,11 @@ function GuestRow({
                   name="invitationId"
                   value={invitation.id}
                 />
+                <input
+                  type="hidden"
+                  name="timeZone"
+                  value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                />
                 <SubmitButton
                   variant="ghost"
                   size="sm"
@@ -1348,6 +1383,11 @@ function GuestCard({
             <Form method="post" className="inline">
               <input type="hidden" name="intent" value="send-calendar-invite" />
               <input type="hidden" name="invitationId" value={invitation.id} />
+              <input
+                type="hidden"
+                name="timeZone"
+                value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+              />
               <SubmitButton
                 variant="ghost"
                 size="sm"
