@@ -60,7 +60,7 @@ export function ActivityInterestsSummary({
                 >
                   {a.activityName || 'Unknown'}
                   <Link
-                    to={`/events/new?activityId=${a.activityId}&friendId=${friendId}&friendName=${encodeURIComponent(friendName)}`}
+                    to={`/events/new?activityId=${a.activityId}&friendId=${friendId}&friendName=${encodeURIComponent(friendName)}&returnTo=${encodeURIComponent(`/friends/${friendId}`)}`}
                     title={`Plan event with ${friendName}`}
                     className="opacity-40 hover:opacity-100 transition-opacity"
                   >

@@ -1,5 +1,7 @@
 import { useForm } from '@conform-to/react'
 import { parseWithZod } from '@conform-to/zod/v4'
+import { CalendarPlus } from 'lucide-react'
+import { useState } from 'react'
 import { Form, Link, redirect, useActionData } from 'react-router'
 import { AddressAutocomplete } from '~/components/address-autocomplete'
 import { BackLink } from '~/components/ui/back-link'
@@ -12,10 +14,21 @@ import { Select } from '~/components/ui/select'
 import { SubmitButton } from '~/components/ui/submit-button'
 import { APP_NAME } from '~/config'
 import { getActivities } from '~/lib/activity.server'
-import { addInvitation, createEvent } from '~/lib/event.server'
+import { isGoogleEnabled } from '~/lib/auth.server'
+import { buildCalendarEventPayload } from '~/lib/calendar'
+import {
+  addInvitation,
+  createEvent,
+  getEventDetail,
+  setGoogleCalendarEventId,
+  updateEvent,
+  updateInvitation,
+} from '~/lib/event.server'
+import { createGoogleCalendarEvent, hasGoogleScopes } from '~/lib/google.server'
 import { isPlacesEnabled } from '~/lib/places.server'
 import { EVENT_VIBE_LABELS, EVENT_VIBES, eventSchema } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
+import { cn } from '~/lib/utils'
 import type { Route } from './+types/events.new'
 
 export function meta() {
@@ -30,6 +43,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const activityId = url.searchParams.get('activityId') || undefined
   const friendId = url.searchParams.get('friendId') || undefined
   const friendName = url.searchParams.get('friendName') || undefined
+  const returnTo = url.searchParams.get('returnTo') || undefined
 
   // Build a suggested event name when coming from a friend profile
   let defaultName = ''
@@ -41,6 +55,11 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const placesEnabled = isPlacesEnabled()
+  const hasCalendarAccess =
+    isGoogleEnabled &&
+    hasGoogleScopes(session.user.id, [
+      'https://www.googleapis.com/auth/calendar.events',
+    ])
 
   return {
     activities,
@@ -49,6 +68,8 @@ export async function loader({ request }: Route.LoaderArgs) {
     friendName,
     defaultName,
     placesEnabled,
+    returnTo,
+    hasCalendarAccess,
   }
 }
 
@@ -66,9 +87,41 @@ export async function action({ request }: Route.ActionArgs) {
   // Auto-invite friend when creating from a friend profile
   const friendId = formData.get('friendId')
   if (typeof friendId === 'string' && friendId) {
-    addInvitation(evt.id, friendId)
+    // Default the event to finalized and the friend to invited
+    updateEvent(evt.id, { status: 'finalized' }, session.user.id)
+    const invitation = addInvitation(evt.id, friendId)
+    updateInvitation(invitation.id, { status: 'invited' })
   }
 
+  // Add to Google Calendar if requested
+  const addToCalendar = formData.get('addToCalendar') === 'on'
+  if (addToCalendar) {
+    const eventDetail = getEventDetail(evt.id, session.user.id)
+    if (eventDetail?.date) {
+      try {
+        const timeZone = (formData.get('timeZone') as string) || undefined
+        const payload = buildCalendarEventPayload({
+          ...eventDetail,
+          timeZone,
+        })
+        const result = await createGoogleCalendarEvent(session.user.id, payload)
+        setGoogleCalendarEventId(
+          evt.id,
+          result.id,
+          result.htmlLink,
+          session.user.id,
+        )
+      } catch {
+        // Calendar add failed silently — event was still created
+      }
+    }
+  }
+
+  // Redirect back to the originating page if specified, otherwise to the new event
+  const returnTo = formData.get('returnTo')
+  if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+    return redirect(returnTo)
+  }
   return redirect(`/events/${evt.id}`)
 }
 
@@ -80,6 +133,8 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
     friendName,
     defaultName,
     placesEnabled,
+    returnTo,
+    hasCalendarAccess,
   } = loaderData
   const lastResult = useActionData<typeof action>()
   const [form, fields] = useForm({
@@ -94,6 +149,9 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
   })
+
+  const [hasDate, setHasDate] = useState(false)
+  const [addToCalendar, setAddToCalendar] = useState(false)
 
   const backTo = friendId ? `/friends/${friendId}` : '/events'
   const backLabel = friendName ? `Back to ${friendName}` : 'Back to Events'
@@ -112,6 +170,7 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         className="space-y-5 rounded-xl border border-border-light bg-card p-6"
       >
         {friendId && <input type="hidden" name="friendId" value={friendId} />}
+        {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
         {/* Name */}
         <FormField>
@@ -149,7 +208,17 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField>
             <Label htmlFor={fields.date.id}>Date</Label>
-            <Input id={fields.date.id} name={fields.date.name} type="date" />
+            <Input
+              id={fields.date.id}
+              name={fields.date.name}
+              type="date"
+              onChange={e => {
+                const filled = !!e.target.value
+                setHasDate(filled)
+                if (filled) setAddToCalendar(true)
+                else setAddToCalendar(false)
+              }}
+            />
           </FormField>
           <FormField>
             <Label htmlFor={fields.time.id}>Time</Label>
@@ -196,6 +265,39 @@ export default function EventNew({ loaderData }: Route.ComponentProps) {
             </Select>
           </FormField>
         </div>
+
+        {/* Google Calendar */}
+        {hasCalendarAccess && (
+          <FormField>
+            <label
+              className={cn(
+                'flex items-center gap-2 text-sm',
+                hasDate ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+              )}
+            >
+              <input
+                type="checkbox"
+                name="addToCalendar"
+                checked={addToCalendar}
+                onChange={e => setAddToCalendar(e.target.checked)}
+                disabled={!hasDate}
+                className="mt-0.5 accent-primary"
+              />
+              <CalendarPlus size={14} className="text-muted-foreground" />
+              Add to Google Calendar
+            </label>
+            {!hasDate && (
+              <p className="text-xs text-muted-foreground mt-1 ml-6">
+                Set a date to enable this option
+              </p>
+            )}
+            <input
+              type="hidden"
+              name="timeZone"
+              value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+            />
+          </FormField>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
