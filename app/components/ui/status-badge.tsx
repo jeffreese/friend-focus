@@ -1,10 +1,16 @@
 import { cn } from '~/lib/utils'
 
 const STATUS_COLORS: Record<string, string> = {
+  // Event lifecycle statuses
   planning: 'bg-warning/10 text-warning',
   finalized: 'bg-primary/10 text-primary',
   completed: 'bg-success/10 text-success',
   cancelled: 'bg-destructive/10 text-destructive',
+  // Invitation statuses
+  attending: 'bg-success/10 text-success',
+  invited: 'bg-primary/10 text-primary',
+  declined: 'bg-destructive/10 text-destructive',
+  not_invited: 'bg-muted text-muted-foreground',
 }
 
 function StatusBadge({
@@ -23,7 +29,7 @@ function StatusBadge({
         className,
       )}
     >
-      {status}
+      {status.replace(/_/g, ' ')}
     </span>
   )
 }

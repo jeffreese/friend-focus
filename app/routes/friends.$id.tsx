@@ -40,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/components/ui/dialog'
+import { EmptyState } from '~/components/ui/empty-state'
 import { ErrorDisplay } from '~/components/ui/error-display'
 import { GoogleIcon } from '~/components/ui/google-button'
 import { InlineConfirmDelete } from '~/components/ui/inline-confirm-delete'
@@ -55,11 +56,13 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table'
+import { Tab, TabList } from '~/components/ui/tabs'
 import { APP_NAME } from '~/config'
 import {
   createAvailability,
   deleteAvailability,
 } from '~/lib/availability.server'
+import { updateInvitation } from '~/lib/event.server'
 import { formatBirthday, formatDate } from '~/lib/format'
 import { getFriendDetail, getFriendOptions } from '~/lib/friend.server'
 import {
@@ -88,6 +91,8 @@ import {
   CONNECTION_TYPES,
   friendConnectionSchema,
   giftIdeaSchema,
+  INVITATION_STATUS_LABELS,
+  INVITATION_STATUSES,
   noteSchema,
 } from '~/lib/schemas'
 import { requireSession } from '~/lib/session.server'
@@ -239,6 +244,12 @@ export async function action({ request, params }: Route.ActionArgs) {
       case 'delete-note': {
         const noteId = formData.get('noteId') as string
         if (noteId) deleteNote(noteId, userId)
+        return { ok: true }
+      }
+      case 'update-rsvp': {
+        const invitationId = formData.get('invitationId') as string
+        const status = formData.get('status') as string
+        if (invitationId && status) updateInvitation(invitationId, { status })
         return { ok: true }
       }
       default:
@@ -478,10 +489,25 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
 
   const otherFriends = allFriends.filter(f => f.id !== friend.id)
 
-  const attendedCount = friend.invitations.filter(i => i.attended).length
-  const totalEvents = friend.invitations.length
+  // Split invitations into upcoming vs past
+  const [eventsTab, setEventsTab] = useState<'upcoming' | 'past'>('upcoming')
+  const today = new Date().toISOString().split('T')[0]
+
+  const upcomingInvitations = friend.invitations
+    .filter(inv => inv.eventDate && inv.eventDate >= today)
+    .sort((a, b) => (a.eventDate ?? '').localeCompare(b.eventDate ?? ''))
+
+  const pastInvitations = friend.invitations.filter(
+    inv => !inv.eventDate || inv.eventDate < today,
+  )
+
+  // Attendance stats (past events only)
+  const attendedCount = pastInvitations.filter(i => i.attended).length
+  const totalPastEvents = pastInvitations.length
   const attendancePercent =
-    totalEvents > 0 ? Math.round((attendedCount / totalEvents) * 100) : 0
+    totalPastEvents > 0
+      ? Math.round((attendedCount / totalPastEvents) * 100)
+      : 0
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -881,6 +907,160 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
         </SectionCard>
       </div>
 
+      {/* Events */}
+      <SectionCard
+        className="mb-6"
+        icon={<CalendarDays size={18} className="text-primary" />}
+        title="Events"
+        count={
+          eventsTab === 'upcoming'
+            ? upcomingInvitations.length
+            : pastInvitations.length
+        }
+      >
+        <TabList className="-mx-4 md:-mx-5 px-4 md:px-5 mb-4 -mt-1">
+          <Tab
+            active={eventsTab === 'upcoming'}
+            onClick={() => setEventsTab('upcoming')}
+          >
+            Upcoming
+            {upcomingInvitations.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                ({upcomingInvitations.length})
+              </span>
+            )}
+          </Tab>
+          <Tab
+            active={eventsTab === 'past'}
+            onClick={() => setEventsTab('past')}
+          >
+            Past
+            {pastInvitations.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                ({pastInvitations.length})
+              </span>
+            )}
+          </Tab>
+        </TabList>
+
+        {eventsTab === 'upcoming' ? (
+          upcomingInvitations.length > 0 ? (
+            <div className="space-y-3">
+              {upcomingInvitations.map(inv => (
+                <div
+                  key={inv.id}
+                  className="flex items-center justify-between gap-4 rounded-lg border border-border p-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={`/events/${inv.eventId}`}
+                      className="font-medium text-sm hover:text-primary transition-colors"
+                    >
+                      {inv.eventName}
+                    </Link>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {inv.eventDate ? formatDate(inv.eventDate) : '—'}
+                    </p>
+                  </div>
+                  <Form method="post" className="shrink-0">
+                    <input type="hidden" name="intent" value="update-rsvp" />
+                    <input type="hidden" name="invitationId" value={inv.id} />
+                    <Select
+                      name="status"
+                      defaultValue={inv.status}
+                      onChange={e => e.currentTarget.form?.requestSubmit()}
+                      className="text-xs h-7 w-auto"
+                    >
+                      {INVITATION_STATUSES.map(s => (
+                        <option key={s} value={s}>
+                          {INVITATION_STATUS_LABELS[s]}
+                        </option>
+                      ))}
+                    </Select>
+                  </Form>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={CalendarDays}
+              title="No upcoming events"
+              description={`${friend.name} isn't added to any future events yet.`}
+              action={
+                <div className="flex flex-col items-center gap-2">
+                  <Button size="sm" asChild>
+                    <Link
+                      to={`/events/new?friendId=${friend.id}&friendName=${encodeURIComponent(friend.name)}&returnTo=${encodeURIComponent(`/friends/${friend.id}`)}`}
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Create an event
+                    </Link>
+                  </Button>
+                  <Link
+                    to="/events"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Or browse existing events to add {friend.name}
+                  </Link>
+                </div>
+              }
+            />
+          )
+        ) : pastInvitations.length > 0 ? (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              Attended {attendedCount} of {totalPastEvents} events (
+              {attendancePercent}%)
+            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-center">Attended</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pastInvitations.map(inv => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        to={`/events/${inv.eventId}`}
+                        className="font-medium hover:text-primary transition-colors"
+                      >
+                        {inv.eventName}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {inv.eventDate ? formatDate(inv.eventDate) : '—'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {inv.attended === true && (
+                        <Check
+                          size={16}
+                          className="inline-block text-success"
+                        />
+                      )}
+                      {inv.attended === false && (
+                        <X
+                          size={16}
+                          className="inline-block text-destructive"
+                        />
+                      )}
+                      {inv.attended === null && (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No event history yet.</p>
+        )}
+      </SectionCard>
+
       {/* Connections */}
       <SectionCard
         className="mb-6"
@@ -1128,68 +1308,6 @@ export default function FriendDetail({ loaderData }: Route.ComponentProps) {
             )}
           </p>
         ) : null}
-      </SectionCard>
-
-      {/* Event History */}
-      <SectionCard
-        className="mb-6"
-        icon={<CalendarDays size={18} className="text-primary" />}
-        title="Event History"
-        count={totalEvents}
-      >
-        {totalEvents > 0 ? (
-          <>
-            <p className="text-sm text-muted-foreground mb-4">
-              Attended {attendedCount} of {totalEvents} events (
-              {attendancePercent}%)
-            </p>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-center">Attended</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {friend.invitations.map(inv => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        to={`/events/${inv.eventId}`}
-                        className="font-medium hover:text-primary transition-colors"
-                      >
-                        {inv.eventName}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {inv.eventDate ? formatDate(inv.eventDate) : '—'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {inv.attended === true && (
-                        <Check
-                          size={16}
-                          className="inline-block text-success"
-                        />
-                      )}
-                      {inv.attended === false && (
-                        <X
-                          size={16}
-                          className="inline-block text-destructive"
-                        />
-                      )}
-                      {inv.attended === null && (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">No event history yet.</p>
-        )}
       </SectionCard>
 
       {/* Notes */}
